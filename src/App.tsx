@@ -1,120 +1,10 @@
-import { useState, useCallback } from "react";
-
-/* ──────────────────────────────────────────
-   공용 UI 컴포넌트 (App() 외부 정의)
-────────────────────────────────────────── */
-function CodeBlock({ code, label }: { code: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [code]);
-  return (
-    <div className="my-3 rounded-lg overflow-hidden border border-slate-700">
-      <div className="flex items-center justify-between bg-slate-800 px-4 py-2">
-        <span className="text-xs text-slate-400 font-mono">{label || "Terminal"}</span>
-        <button onClick={handleCopy} className="text-xs px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">
-          {copied ? "✓ 복사됨" : "복사"}
-        </button>
-      </div>
-      <pre className="bg-slate-900 p-4 overflow-x-auto text-sm font-mono text-green-300 whitespace-pre-wrap leading-relaxed">{code}</pre>
-    </div>
-  );
-}
-
-function Note({ type, children }: { type: "tip" | "warn" | "info"; children: React.ReactNode }) {
-  const s = {
-    tip:  { bg: "bg-emerald-900/30", border: "border-emerald-500/50", icon: "💡", label: "팁", text: "text-emerald-300" },
-    warn: { bg: "bg-amber-900/30",   border: "border-amber-500/50",   icon: "⚠️", label: "주의", text: "text-amber-300" },
-    info: { bg: "bg-cyan-900/30",    border: "border-cyan-500/50",    icon: "ℹ️", label: "참고", text: "text-cyan-300" },
-  }[type];
-  return (
-    <div className={`my-3 p-3 rounded-lg border ${s.bg} ${s.border}`}>
-      <span className={`font-bold text-sm ${s.text}`}>{s.icon} {s.label}  </span>
-      <span className="text-slate-300 text-sm">{children}</span>
-    </div>
-  );
-}
-
-function Checklist({ items }: { items: string[] }) {
-  const [checked, setChecked] = useState<boolean[]>(items.map(() => false));
-  const toggle = (i: number) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
-  const done = checked.filter(Boolean).length;
-  return (
-    <div className="my-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-slate-300">체크리스트</span>
-        <span className="text-xs px-2 py-1 bg-slate-700 rounded-full text-slate-400">{done}/{items.length} 완료</span>
-      </div>
-      <div className="w-full h-1.5 bg-slate-700 rounded-full mb-4 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${(done / items.length) * 100}%` }} />
-      </div>
-      {items.map((item, i) => (
-        <label key={i} className="flex items-start gap-3 mb-2 cursor-pointer group">
-          <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-0.5 w-4 h-4 accent-cyan-500 cursor-pointer flex-shrink-0" />
-          <span className={`text-sm transition-colors ${checked[i] ? "line-through text-slate-500" : "text-slate-300 group-hover:text-white"}`}>{item}</span>
-        </label>
-      ))}
-    </div>
-  );
-}
-
-function ResourceBar({ label, used, total, unit, color }: { label: string; used: number; total: number; unit: string; color: string }) {
-  const pct = Math.round((used / total) * 100);
-  return (
-    <div className="mb-4">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-slate-300 font-medium">{label}</span>
-        <span className="text-slate-400 font-mono text-xs">{used}{unit} / {total}{unit}</span>
-      </div>
-      <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function NightModeTimeline() {
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  const isSleep = (h: number) => h >= 23 || h < 8;
-  return (
-    <div className="my-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">🌙</span>
-        <span className="text-sm font-semibold text-white">야간 절전 스케줄 (23:00 ~ 08:00)</span>
-      </div>
-      <div className="flex gap-0.5">
-        {hours.map(h => (
-          <div key={h} className="flex-1 flex flex-col items-center gap-1">
-            <div className={`h-6 rounded-sm w-full ${isSleep(h) ? "bg-slate-700" : "bg-gradient-to-b from-cyan-500 to-blue-600"}`} title={`${h}:00`} />
-            {h % 6 === 0 && <span className="text-xs text-slate-500">{h}</span>}
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-4 mt-2 text-xs text-slate-400">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gradient-to-b from-cyan-500 to-blue-600 inline-block" /> 동작 (08:00~23:00)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-slate-700 inline-block" /> 절전 (23:00~08:00)</span>
-      </div>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────
-   IP 파생 헬퍼
-────────────────────────────────────────── */
-function deriveVMIPs(proxmoxIP: string) {
-  const parts = proxmoxIP.trim().split(".");
-  if (parts.length !== 4) return { nasIP: "x.x.x.201", aiIP: "x.x.x.202", winIP: "x.x.x.203" };
-  const base = parts.slice(0, 3).join(".");
-  const last = parseInt(parts[3]) || 200;
-  return {
-    nasIP: `${base}.${last + 1}`,
-    aiIP:  `${base}.${last + 2}`,
-    winIP: `${base}.${last + 3}`,
-  };
-}
+import { useState } from 'react';
+import CodeBlock from '@/components/CodeBlock';
+import Note from '@/components/Note';
+import Checklist from '@/components/Checklist';
+import ResourceBar from '@/components/ResourceBar';
+import NightModeTimeline from '@/components/NightModeTimeline';
+import { deriveVMIPs } from '@/utils/network';
 
 /* ──────────────────────────────────────────
    메인 앱
@@ -122,13 +12,13 @@ function deriveVMIPs(proxmoxIP: string) {
 export default function App() {
   /* ── 네트워크 설정 상태 ── */
   const [netConfig, setNetConfig] = useState({
-    proxmoxIP: "10.179.93.200",
-    prefix:    "24",
-    gateway:   "10.179.93.62",
-    dns:       "10.179.93.62",
+    proxmoxIP: '10.179.93.200',
+    prefix:    '24',
+    gateway:   '10.179.93.62',
+    dns:       '10.179.93.62',
   });
 
-  /* ── 파생 변수 (STEPS 내부에서 직접 참조) ── */
+  /* ── 파생 변수 ── */
   const { nasIP, aiIP, winIP } = deriveVMIPs(netConfig.proxmoxIP);
   const pxIP = netConfig.proxmoxIP;
   const pfx  = netConfig.prefix;
@@ -138,7 +28,7 @@ export default function App() {
   /* ── UI 상태 ── */
   const [activeStep, setActiveStep] = useState(0);
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0]));
-  const [ramPhase, setRamPhase] = useState<"now" | "after">("now");
+  const [ramPhase, setRamPhase] = useState<'now' | 'after'>('now');
 
   const toggleSection = (i: number) => {
     setOpenSections(prev => {
@@ -150,15 +40,15 @@ export default function App() {
   const goTo = (id: number) => { setActiveStep(id); setOpenSections(new Set([0])); };
 
   /* ──────────────────────────────────────────
-     STEPS (App 내부 — netConfig 클로저 참조)
+     STEPS (netConfig 클로저 참조)
   ────────────────────────────────────────── */
   const STEPS = [
     /* ══════════════════════════════════════ STEP 0 준비물 */
     {
-      id: 0, title: "준비물", subtitle: "USB 32GB 1개로 전부 해결!", icon: "📦", color: "from-slate-500 to-slate-600",
+      id: 0, title: '준비물', subtitle: 'USB 32GB 1개로 전부 해결!', icon: '📦', color: 'from-slate-500 to-slate-600',
       sections: [
         {
-          title: "✅ 필요한 준비물 체크리스트",
+          title: '✅ 필요한 준비물 체크리스트',
           body: () => (
             <>
               <div className="my-3 p-4 bg-emerald-900/20 rounded-xl border border-emerald-500/40">
@@ -171,10 +61,10 @@ export default function App() {
               <div className="my-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
                 <p className="text-xs font-semibold text-slate-400 uppercase mb-3">📐 32GB USB 용량 계산</p>
                 {[
-                  { name: "Proxmox VE 8.x ISO", size: 1.2, color: "bg-orange-500" },
-                  { name: "Ubuntu Server 24.04 ISO", size: 2.6, color: "bg-blue-500" },
-                  { name: "Windows 11 Pro ISO", size: 5.8, color: "bg-cyan-500" },
-                  { name: "VirtIO 드라이버 ISO", size: 0.6, color: "bg-purple-500" },
+                  { name: 'Proxmox VE 8.x ISO',         size: 1.2, color: 'bg-orange-500' },
+                  { name: 'Ubuntu Server 24.04 ISO',     size: 2.6, color: 'bg-blue-500'   },
+                  { name: 'Windows 11 Pro ISO',          size: 5.8, color: 'bg-cyan-500'   },
+                  { name: 'VirtIO 드라이버 ISO',          size: 0.6, color: 'bg-purple-500' },
                 ].map((f, i) => (
                   <div key={i} className="flex items-center gap-3 mb-2">
                     <div className="w-36 flex-shrink-0 text-xs text-slate-300">{f.name}</div>
@@ -189,23 +79,23 @@ export default function App() {
                   <span className="font-black text-emerald-400 text-lg">10.2 GB <span className="text-sm font-normal text-slate-500">/ 32 GB</span></span>
                 </div>
                 <div className="mt-2 h-3 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500" style={{ width: "32%" }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500" style={{ width: '32%' }} />
                 </div>
                 <p className="text-xs text-emerald-400 mt-2 text-right">약 21.8 GB 여유 공간 — 충분합니다! ✓</p>
               </div>
               <Checklist items={[
-                "USB 32GB 1개 준비 (USB 3.0 이상 권장)",
-                "인터넷 연결된 PC (다운로드용)",
-                "Ventoy 다운로드 및 설치 (아래 가이드 참고)",
-                "ISO 4개 다운로드 후 USB에 복사",
-                "모니터 + 키보드 (최초 설치 때만 필요)",
-                "LAN 케이블 연결 권장 (Wi-Fi보다 안정적)",
+                'USB 32GB 1개 준비 (USB 3.0 이상 권장)',
+                '인터넷 연결된 PC (다운로드용)',
+                'Ventoy 다운로드 및 설치 (아래 가이드 참고)',
+                'ISO 4개 다운로드 후 USB에 복사',
+                '모니터 + 키보드 (최초 설치 때만 필요)',
+                'LAN 케이블 연결 권장 (Wi-Fi보다 안정적)',
               ]} />
             </>
           ),
         },
         {
-          title: "① Ventoy 설치하기 (USB 멀티부팅 준비)",
+          title: '① Ventoy 설치하기 (USB 멀티부팅 준비)',
           body: () => (
             <div className="space-y-3">
               <p className="text-slate-300 text-sm">Ventoy는 USB를 한 번만 포맷하면 이후엔 ISO 파일을 그냥 복붙하기만 하면 됩니다.</p>
@@ -224,12 +114,12 @@ export default function App() {
               </div>
               <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 text-sm text-slate-300 space-y-2.5">
                 {[
-                  ["2", "다운로드한 zip 파일 압축 해제"],
-                  ["3", "USB 32GB를 PC에 꽂기"],
-                  ["4", "압축 해제 폴더 안의 Ventoy2Disk.exe 실행 (관리자 권한)"],
-                  ["5", "Device 항목에서 USB 선택 (PC 내장 드라이브 선택 주의!)"],
-                  ["6", "Partition Style → GPT 선택 (UEFI 부팅용)"],
-                  ["7", "Install 버튼 클릭 → 경고창 확인 → 완료"],
+                  ['2', '다운로드한 zip 파일 압축 해제'],
+                  ['3', 'USB 32GB를 PC에 꽂기'],
+                  ['4', '압축 해제 폴더 안의 Ventoy2Disk.exe 실행 (관리자 권한)'],
+                  ['5', 'Device 항목에서 USB 선택 (PC 내장 드라이브 선택 주의!)'],
+                  ['6', 'Partition Style → GPT 선택 (UEFI 부팅용)'],
+                  ['7', 'Install 버튼 클릭 → 경고창 확인 → 완료'],
                 ].map(([n, t]) => (
                   <div key={n} className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
@@ -243,15 +133,15 @@ export default function App() {
           ),
         },
         {
-          title: "② ISO 파일 다운로드 & USB에 복사",
+          title: '② ISO 파일 다운로드 & USB에 복사',
           body: () => (
             <div className="space-y-2">
               <p className="text-slate-300 text-sm mb-3">아래 4개를 모두 다운로드한 뒤, USB의 <strong className="text-cyan-400">ventoy</strong> 파티션에 그냥 복붙하면 끝입니다.</p>
               {[
-                { name: "① Proxmox VE 8.x ISO", url: "https://www.proxmox.com/en/downloads", desc: "약 1.2 GB · 베어메탈 하이퍼바이저", size: "~1.2 GB", color: "border-orange-500/50 bg-orange-900/10" },
-                { name: "② Ubuntu Server 24.04 LTS ISO", url: "https://ubuntu.com/download/server", desc: "약 2.6 GB · NAS + AI VM용 (1개로 2번 사용)", size: "~2.6 GB", color: "border-blue-500/50 bg-blue-900/10" },
-                { name: "③ Windows 11 ISO (MS 공식)", url: "https://www.microsoft.com/ko-kr/software-download/windows11", desc: "약 5.8 GB · 개발·작업용 VM", size: "~5.8 GB", color: "border-cyan-500/50 bg-cyan-900/10" },
-                { name: "④ VirtIO 드라이버 ISO", url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso", desc: "약 0.6 GB · Windows VM 필수 드라이버", size: "~0.6 GB", color: "border-purple-500/50 bg-purple-900/10" },
+                { name: '① Proxmox VE 8.x ISO',            url: 'https://www.proxmox.com/en/downloads',                                                                           desc: '약 1.2 GB · 베어메탈 하이퍼바이저',             size: '~1.2 GB', color: 'border-orange-500/50 bg-orange-900/10' },
+                { name: '② Ubuntu Server 24.04 LTS ISO',   url: 'https://ubuntu.com/download/server',                                                                             desc: '약 2.6 GB · NAS + AI VM용 (1개로 2번 사용)',    size: '~2.6 GB', color: 'border-blue-500/50 bg-blue-900/10'   },
+                { name: '③ Windows 11 ISO (MS 공식)',       url: 'https://www.microsoft.com/ko-kr/software-download/windows11',                                                    desc: '약 5.8 GB · 개발·작업용 VM',                    size: '~5.8 GB', color: 'border-cyan-500/50 bg-cyan-900/10'   },
+                { name: '④ VirtIO 드라이버 ISO',            url: 'https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso',                  desc: '약 0.6 GB · Windows VM 필수 드라이버',          size: '~0.6 GB', color: 'border-purple-500/50 bg-purple-900/10' },
               ].map((item, i) => (
                 <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                   className={`flex items-center justify-between p-3 rounded-lg border ${item.color} hover:brightness-125 transition-all group`}>
@@ -274,7 +164,7 @@ export default function App() {
           ),
         },
         {
-          title: "③ Ventoy 부팅 메뉴 사용법",
+          title: '③ Ventoy 부팅 메뉴 사용법',
           body: () => (
             <div className="space-y-3">
               <p className="text-slate-300 text-sm">PC에 USB를 꽂고 재부팅 후 BIOS 부팅 메뉴(보통 F11 또는 F12)에서 USB 선택 → Ventoy 메뉴 진입</p>
@@ -282,18 +172,18 @@ export default function App() {
                 <div className="text-slate-500 text-xs mb-2">[ Ventoy 부팅 메뉴 화면 ]</div>
                 <div className="space-y-1">
                   {[
-                    { name: "proxmox-ve_8.x-1.iso", active: true, order: "1번째 설치" },
-                    { name: "ubuntu-24.04-live-server-amd64.iso", active: false, order: "2번째·3번째 사용" },
-                    { name: "Win11_23H2_Korean_x64.iso", active: false, order: "4번째 설치" },
-                    { name: "virtio-win.iso", active: false, order: "Windows 드라이버" },
+                    { name: 'proxmox-ve_8.x-1.iso',                active: true,  order: '1번째 설치'     },
+                    { name: 'ubuntu-24.04-live-server-amd64.iso',   active: false, order: '2번째·3번째 사용' },
+                    { name: 'Win11_23H2_Korean_x64.iso',            active: false, order: '4번째 설치'     },
+                    { name: 'virtio-win.iso',                       active: false, order: 'Windows 드라이버' },
                   ].map((item, i) => (
-                    <div key={i} className={`flex items-center justify-between px-3 py-1.5 rounded ${item.active ? "bg-cyan-600 text-white" : "text-slate-400"}`}>
-                      <span>{item.active ? "▶ " : "  "}{item.name}</span>
+                    <div key={i} className={`flex items-center justify-between px-3 py-1.5 rounded ${item.active ? 'bg-cyan-600 text-white' : 'text-slate-400'}`}>
+                      <span>{item.active ? '▶ ' : '  '}{item.name}</span>
                       <span className="text-xs opacity-60">{item.order}</span>
                     </div>
                   ))}
                 </div>
-                <div className="text-slate-600 text-xs mt-2">↑↓ 선택   Enter 부팅</div>
+                <div className="text-slate-600 text-xs mt-2">↑↓ 선택{'   '}Enter 부팅</div>
               </div>
               <Note type="info">Ubuntu ISO는 NAS VM(VM1)과 AI VM(VM2) 두 번 사용됩니다. ISO를 한 번만 다운로드하면 USB에서 2번 재사용 가능합니다.</Note>
             </div>
@@ -304,42 +194,42 @@ export default function App() {
 
     /* ══════════════════════════════════════ STEP 1 Proxmox */
     {
-      id: 1, title: "Proxmox VE 설치", subtitle: "베어메탈 하이퍼바이저", icon: "⚙️", color: "from-orange-500 to-amber-500",
+      id: 1, title: 'Proxmox VE 설치', subtitle: '베어메탈 하이퍼바이저', icon: '⚙️', color: 'from-orange-500 to-amber-500',
       sections: [
         {
-          title: "Proxmox VE란?",
+          title: 'Proxmox VE란?',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">PC 전체를 '가상머신 공장'으로 만드는 소프트웨어입니다. 설치 후 웹 브라우저에서 VM을 생성·관리할 수 있습니다.</p>
               <Checklist items={[
-                "USB(Ventoy)를 PC에 꽂고 재부팅 → F11/F12로 USB 부팅 선택",
-                "Ventoy 메뉴에서 proxmox-ve ISO 선택 → Enter",
-                "설치 마법사 진행 (아래 설정값 참고)",
-                "설치 완료 후 USB 제거 없이 재부팅 (Ventoy 메뉴에서 HDD 선택)",
+                'USB(Ventoy)를 PC에 꽂고 재부팅 → F11/F12로 USB 부팅 선택',
+                'Ventoy 메뉴에서 proxmox-ve ISO 선택 → Enter',
+                '설치 마법사 진행 (아래 설정값 참고)',
+                '설치 완료 후 USB 제거 없이 재부팅 (Ventoy 메뉴에서 HDD 선택)',
                 `웹 관리 페이지 접속 확인 (https://${pxIP}:8006)`,
               ]} />
             </>
           ),
         },
         {
-          title: "설치 시 주요 입력값",
+          title: '설치 시 주요 입력값',
           body: () => (
             <>
               <Note type="info">상단 <strong>🔧 내 네트워크 설정</strong>에서 IP를 미리 입력해두면 아래 값이 자동으로 채워집니다. 설치 화면에서 그대로 입력하세요.</Note>
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
-                  ["설치 대상 디스크", "512GB M.2 SSD 선택"],
-                  ["파일시스템", "ext4 (기본값 유지)"],
-                  ["국가 / 타임존", "Korea / Asia/Seoul"],
-                  ["호스트이름", "homelab.local"],
-                  ["관리 IP 주소 (CIDR)", `${pxIP}/${pfx}`],
-                  ["게이트웨이", gw],
-                  ["DNS 서버", dns],
-                  ["root 비밀번호", "기억하기 쉬운 강력한 값"],
+                  ['설치 대상 디스크',    '512GB M.2 SSD 선택'],
+                  ['파일시스템',          'ext4 (기본값 유지)'],
+                  ['국가 / 타임존',       'Korea / Asia/Seoul'],
+                  ['호스트이름',          'homelab.local'],
+                  ['관리 IP 주소 (CIDR)', `${pxIP}/${pfx}`],
+                  ['게이트웨이',          gw],
+                  ['DNS 서버',           dns],
+                  ['root 비밀번호',       '기억하기 쉬운 강력한 값'],
                 ].map(([k, v], i) => (
-                  <div key={i} className={`p-2 bg-slate-800 rounded-lg border ${["관리 IP 주소 (CIDR)", "게이트웨이", "DNS 서버"].includes(k) ? "border-cyan-600/50" : "border-slate-700"}`}>
+                  <div key={i} className={`p-2 bg-slate-800 rounded-lg border ${['관리 IP 주소 (CIDR)', '게이트웨이', 'DNS 서버'].includes(k) ? 'border-cyan-600/50' : 'border-slate-700'}`}>
                     <div className="text-xs text-slate-500 mb-0.5">{k}</div>
-                    <div className={`text-sm font-mono ${["관리 IP 주소 (CIDR)", "게이트웨이", "DNS 서버"].includes(k) ? "text-cyan-300" : "text-amber-400"}`}>{v}</div>
+                    <div className={`text-sm font-mono ${['관리 IP 주소 (CIDR)', '게이트웨이', 'DNS 서버'].includes(k) ? 'text-cyan-300' : 'text-amber-400'}`}>{v}</div>
                   </div>
                 ))}
               </div>
@@ -348,15 +238,13 @@ export default function App() {
           ),
         },
         {
-          title: "설치 완료 후 — 물리 콘솔 로그인 (CMD 창)",
+          title: '설치 완료 후 — 물리 콘솔 로그인 (CMD 창)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">
                 Proxmox 설치 완료 후 재부팅하면 모니터에 아래와 같은 <strong>텍스트 콘솔</strong>이 나타납니다.
                 이 화면이 Proxmox의 "CMD 창"입니다.
               </p>
-
-              {/* 콘솔 화면 시뮬레이션 */}
               <div className="my-3 rounded-xl overflow-hidden border border-slate-600">
                 <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
@@ -364,69 +252,26 @@ export default function App() {
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
                   <span className="ml-2">Proxmox VE — 물리 콘솔 화면</span>
                 </div>
-                <pre className="bg-black p-4 text-sm font-mono text-green-400 leading-relaxed">{`Proxmox Virtual Environment 8.x.x
-homelab.local login: _`}</pre>
+                <pre className="bg-black p-4 text-sm font-mono text-green-400 leading-relaxed">{`Proxmox Virtual Environment 8.x.x\nhomelab.local login: _`}</pre>
               </div>
 
               <p className="text-slate-300 text-sm font-semibold mb-2">① 로그인</p>
-              <CodeBlock label="물리 콘솔 — 로그인" code={`# 사용자명 입력 후 Enter
-homelab.local login: root
-
-# 비밀번호 입력 (입력해도 화면에 표시 안 됨 — 정상)
-Password: xxxxxxxx`} />
+              <CodeBlock label="물리 콘솔 — 로그인" code={`# 사용자명 입력 후 Enter\nhomelab.local login: root\n\n# 비밀번호 입력 (입력해도 화면에 표시 안 됨 — 정상)\nPassword: xxxxxxxx`} />
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">② 로그인 성공 시 화면</p>
               <div className="my-2 rounded-xl overflow-hidden border border-slate-600">
                 <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono">Proxmox Shell (root 로그인 후)</div>
-                <pre className="bg-black p-4 text-sm font-mono text-green-400 leading-relaxed">{`Linux homelab 6.8.x-3-pve #1 SMP PREEMPT_DYNAMIC ...
-...
-Last login: ...
-
-  ██████╗ ██╗   ██╗███████╗
-  ██╔══██╗██║   ██║██╔════╝
-  ██████╔╝██║   ██║█████╗
-  ██╔═══╝ ╚██╗ ██╔╝██╔══╝
-  ██║      ╚████╔╝ ███████╗
-  ╚═╝       ╚═══╝  ╚══════╝
-
-root@homelab:~# _`}</pre>
+                <pre className="bg-black p-4 text-sm font-mono text-green-400 leading-relaxed">{`Linux homelab 6.8.x-3-pve #1 SMP PREEMPT_DYNAMIC ...\n...\nLast login: ...\n\n  ██████╗ ██╗   ██╗███████╗\n  ██╔══██╗██║   ██║██╔════╝\n  ██████╔╝██║   ██║█████╗\n  ██╔═══╝ ╚██╗ ██╔╝██╔══╝\n  ██║      ╚████╔╝ ███████╗\n  ╚═╝       ╚═══╝  ╚══════╝\n\nroot@homelab:~# _`}</pre>
               </div>
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">③ 네트워크·IP 확인</p>
-              <CodeBlock label="Proxmox Shell" code={`# 현재 IP 확인 (vmbr0 브리지 IP)
-ip addr show vmbr0
-
-# 예상 출력:
-# inet ${pxIP}/${pfx} brd ... scope global vmbr0
-
-# 게이트웨이 확인
-ip route | grep default
-# 예: default via ${gw} dev vmbr0
-
-# 인터넷 연결 확인
-ping -c 3 8.8.8.8`} />
+              <CodeBlock label="Proxmox Shell" code={`# 현재 IP 확인 (vmbr0 브리지 IP)\nip addr show vmbr0\n\n# 예상 출력:\n# inet ${pxIP}/${pfx} brd ... scope global vmbr0\n\n# 게이트웨이 확인\nip route | grep default\n# 예: default via ${gw} dev vmbr0\n\n# 인터넷 연결 확인\nping -c 3 8.8.8.8`} />
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">④ IP가 다를 경우 — /etc/network/interfaces 수정</p>
               <Note type="info">설치 시 입력한 IP와 실제 IP가 다르게 잡혔다면 아래 파일을 수정합니다. <strong>vmbr0 브리지</strong> 방식 — Ubuntu의 netplan과 다릅니다.</Note>
               <CodeBlock label="Proxmox Shell" code={`nano /etc/network/interfaces`} />
-              <CodeBlock label={`/etc/network/interfaces — 올바른 설정 값`} code={`auto lo
-iface lo inet loopback
-
-iface ens18 inet manual
-
-auto vmbr0
-iface vmbr0 inet static
-    address ${pxIP}/${pfx}
-    gateway ${gw}
-    nameserver ${dns}
-    bridge-ports ens18
-    bridge-stp off
-    bridge-fd 0`} />
-              <CodeBlock label="설정 저장 후 적용" code={`# Ctrl+X → Y → Enter 로 저장 후
-systemctl restart networking
-
-# 변경된 IP 확인
-ip addr show vmbr0`} />
+              <CodeBlock label={`/etc/network/interfaces — 올바른 설정 값`} code={`auto lo\niface lo inet loopback\n\niface ens18 inet manual\n\nauto vmbr0\niface vmbr0 inet static\n    address ${pxIP}/${pfx}\n    gateway ${gw}\n    nameserver ${dns}\n    bridge-ports ens18\n    bridge-stp off\n    bridge-fd 0`} />
+              <CodeBlock label="설정 저장 후 적용" code={`# Ctrl+X → Y → Enter 로 저장 후\nsystemctl restart networking\n\n# 변경된 IP 확인\nip addr show vmbr0`} />
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">⑤ 웹 관리 UI 접속 확인</p>
               <p className="text-xs text-slate-400 mb-1">IP가 확인되면 <strong>같은 네트워크의 다른 PC</strong> 브라우저에서 접속합니다.</p>
@@ -436,7 +281,7 @@ ip addr show vmbr0`} />
           ),
         },
         {
-          title: "무료 업데이트 저장소 설정",
+          title: '무료 업데이트 저장소 설정',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">Proxmox 웹 UI → 왼쪽 트리에서 <strong>homelab</strong> 클릭 → <strong>Shell</strong> 탭 → 아래 명령 실행</p>
@@ -450,19 +295,19 @@ ip addr show vmbr0`} />
 
     /* ══════════════════════════════════════ STEP 2 NAS */
     {
-      id: 2, title: "VM1 · NAS 서버", subtitle: "Ubuntu + CasaOS + Jellyfin + Samba", icon: "🗄️", color: "from-blue-500 to-cyan-500",
+      id: 2, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
       sections: [
         {
-          title: "VM 생성 설정 (VM ID: 100)",
+          title: 'VM 생성 설정 (VM ID: 100)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">Proxmox 웹 UI 오른쪽 상단 <strong>'VM 만들기'</strong> 버튼 클릭 → 아래 값으로 설정합니다.</p>
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
-                  ["VM ID", "100"], ["이름", "nas-server"],
-                  ["OS ISO", "Ubuntu Server 24.04"], ["BIOS", "SeaBIOS (기본값)"],
-                  ["CPU 코어", "2"], ["RAM", "2048 MB (2 GB) → 업그레이드 후 4096 MB"],
-                  ["디스크 크기", "60 GB (M.2 SSD)"], ["네트워크", "VirtIO (기본값)"],
+                  ['VM ID', '100'], ['이름', 'nas-server'],
+                  ['OS ISO', 'Ubuntu Server 24.04'], ['BIOS', 'SeaBIOS (기본값)'],
+                  ['CPU 코어', '2'], ['RAM', '2048 MB (2 GB) → 업그레이드 후 4096 MB'],
+                  ['디스크 크기', '60 GB (M.2 SSD)'], ['네트워크', 'VirtIO (기본값)'],
                 ].map(([k, v], i) => (
                   <div key={i} className="p-2 bg-slate-800 rounded-lg border border-slate-700">
                     <div className="text-xs text-slate-500 mb-0.5">{k}</div>
@@ -475,7 +320,7 @@ ip addr show vmbr0`} />
           ),
         },
         {
-          title: "1TB HDD 패스스루 연결",
+          title: '1TB HDD 패스스루 연결',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">Proxmox Shell에서 HDD 장치명을 확인 후 VM에 직접 연결합니다.</p>
@@ -485,12 +330,10 @@ ip addr show vmbr0`} />
           ),
         },
         {
-          title: "Ubuntu 설치 중 고정 IP 직접 설정",
+          title: 'Ubuntu 설치 중 고정 IP 직접 설정',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">VM 100 시작 → Console 탭에서 Ubuntu 설치 진행. 설치 중 네트워크 설정 단계에서 <strong>처음부터 고정 IP로 입력</strong>합니다.</p>
-
-              {/* 설치 중 네트워크 설정 단계 */}
               <div className="p-4 bg-slate-800 rounded-xl border border-cyan-500/40 mb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">🖥️</span>
@@ -498,11 +341,11 @@ ip addr show vmbr0`} />
                 </div>
                 <div className="space-y-2.5 mb-3">
                   {[
-                    ["1", "설치 화면에서 Network connections 메뉴 진입"],
-                    ["2", "ens18 (또는 eth0) 선택 → Enter → Edit IPv4 선택"],
-                    ["3", "IPv4 Method: Automatic (DHCP) → Manual 로 변경"],
-                    ["4", "아래 값 입력 후 Save"],
-                    ["5", "Done → 설치 계속 진행"],
+                    ['1', '설치 화면에서 Network connections 메뉴 진입'],
+                    ['2', 'ens18 (또는 eth0) 선택 → Enter → Edit IPv4 선택'],
+                    ['3', 'IPv4 Method: Automatic (DHCP) → Manual 로 변경'],
+                    ['4', '아래 값 입력 후 Save'],
+                    ['5', 'Done → 설치 계속 진행'],
                   ].map(([n, t]) => (
                     <div key={n} className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
@@ -512,39 +355,29 @@ ip addr show vmbr0`} />
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   {[
-                    ["Subnet", `${nasIP}/${pfx}`],
-                    ["Address", nasIP],
-                    ["Gateway", gw],
-                    ["Name servers", dns],
-                    ["Search domains", "(비워두기)"],
-                    ["OpenSSH Server", "✅ 설치 체크 필수"],
+                    ['Subnet',        `${nasIP}/${pfx}`],
+                    ['Address',       nasIP],
+                    ['Gateway',       gw],
+                    ['Name servers',  dns],
+                    ['Search domains','(비워두기)'],
+                    ['OpenSSH Server','✅ 설치 체크 필수'],
                   ].map(([k, v]) => (
-                    <div key={k} className={`p-2 rounded-lg border ${k === "Subnet" || k === "Address" || k === "Gateway" || k === "Name servers" ? "bg-cyan-900/20 border-cyan-600/40" : "bg-slate-700/50 border-slate-600"}`}>
+                    <div key={k} className={`p-2 rounded-lg border ${['Subnet','Address','Gateway','Name servers'].includes(k) ? 'bg-cyan-900/20 border-cyan-600/40' : 'bg-slate-700/50 border-slate-600'}`}>
                       <div className="text-xs text-slate-500 mb-0.5">{k}</div>
                       <div className="text-sm font-mono text-cyan-300">{v}</div>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* 설치 완료 후 SSH 접속 */}
               <p className="text-slate-300 text-sm font-semibold mb-2">설치 완료 후 — SSH 바로 접속</p>
               <Note type="tip">고정 IP로 설치했으므로 VM이 부팅되면 즉시 SSH 접속이 가능합니다. netplan 수정 불필요!</Note>
-              <CodeBlock label="내 PC 터미널 (Windows PowerShell / macOS 터미널)" code={`ssh ubuntu@${nasIP}
-
-# 시스템 업데이트
-sudo apt update && sudo apt upgrade -y`} />
-
-              {/* IP 확인 */}
-              <CodeBlock label="VM 콘솔에서 IP 확인 (SSH 전 확인용)" code={`ip addr show ens18
-# 출력: inet ${nasIP}/${pfx} 확인
-
-ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
+              <CodeBlock label="내 PC 터미널 (Windows PowerShell / macOS 터미널)" code={`ssh ubuntu@${nasIP}\n\n# 시스템 업데이트\nsudo apt update && sudo apt upgrade -y`} />
+              <CodeBlock label="VM 콘솔에서 IP 확인 (SSH 전 확인용)" code={`ip addr show ens18\n# 출력: inet ${nasIP}/${pfx} 확인\n\nping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
             </>
           ),
         },
         {
-          title: "CasaOS 설치 (NAS 대시보드)",
+          title: 'CasaOS 설치 (NAS 대시보드)',
           body: () => (
             <>
               <CodeBlock label="NAS VM SSH" code={`# CasaOS 원클릭 설치 (약 3~5분)\ncurl -fsSL https://get.casaos.io | sudo bash`} />
@@ -555,7 +388,7 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
           ),
         },
         {
-          title: "Jellyfin 설치 (Google TV · 모바일 스트리밍)",
+          title: 'Jellyfin 설치 (Google TV · 모바일 스트리밍)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">영화·사진을 Google TV / 스마트폰에서 스트리밍하는 무료 미디어 서버입니다.</p>
@@ -574,7 +407,7 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
           ),
         },
         {
-          title: "Samba 설정 (Windows 파일 공유)",
+          title: 'Samba 설정 (Windows 파일 공유)',
           body: () => (
             <>
               <CodeBlock label="NAS VM SSH" code={`# 미디어 폴더 생성\nsudo mkdir -p /data/media /data/files\nsudo chmod 777 /data/media /data/files\n\n# smb.conf 편집 (맨 아래에 추가)\nsudo nano /etc/samba/smb.conf`} />
@@ -589,18 +422,18 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
 
     /* ══════════════════════════════════════ STEP 3 AI */
     {
-      id: 3, title: "VM2 · AI 에이전트", subtitle: "Ollama + Dify + PostgreSQL + PGVector", icon: "🤖", color: "from-purple-600 to-violet-700",
+      id: 3, title: 'VM2 · AI 에이전트', subtitle: 'Ollama + Dify + PostgreSQL + PGVector', icon: '🤖', color: 'from-purple-600 to-violet-700',
       sections: [
         {
-          title: "VM 생성 설정 (VM ID: 101)",
+          title: 'VM 생성 설정 (VM ID: 101)',
           body: () => (
             <>
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
-                  ["VM ID", "101"], ["이름", "ai-agent"],
-                  ["OS ISO", "Ubuntu Server 24.04"], ["CPU 코어", "4 (업그레이드 후 8)"],
-                  ["RAM", "4096 MB (4 GB) → 업그레이드 후 20480 MB"], ["디스크 크기", "350 GB (M.2 SSD)"],
-                  ["네트워크", "VirtIO"], ["예상 IP", aiIP],
+                  ['VM ID', '101'], ['이름', 'ai-agent'],
+                  ['OS ISO', 'Ubuntu Server 24.04'], ['CPU 코어', '4 (업그레이드 후 8)'],
+                  ['RAM', '4096 MB (4 GB) → 업그레이드 후 20480 MB'], ['디스크 크기', '350 GB (M.2 SSD)'],
+                  ['네트워크', 'VirtIO'], ['예상 IP', aiIP],
                 ].map(([k, v], i) => (
                   <div key={i} className="p-2 bg-slate-800 rounded-lg border border-slate-700">
                     <div className="text-xs text-slate-500 mb-0.5">{k}</div>
@@ -613,7 +446,7 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
           ),
         },
         {
-          title: "Ubuntu 설치 중 고정 IP 직접 설정",
+          title: 'Ubuntu 설치 중 고정 IP 직접 설정',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">VM 101 시작 → Console 탭에서 Ubuntu 설치. NAS와 동일하게 설치 마법사 네트워크 단계에서 <strong>처음부터 고정 IP로 입력</strong>합니다.</p>
@@ -624,9 +457,9 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
                 </div>
                 <div className="space-y-2.5 mb-3">
                   {[
-                    ["1", "Network connections → ens18 선택 → Edit IPv4"],
-                    ["2", "IPv4 Method: Automatic (DHCP) → Manual 변경"],
-                    ["3", "아래 값 입력 후 Save → Done"],
+                    ['1', 'Network connections → ens18 선택 → Edit IPv4'],
+                    ['2', 'IPv4 Method: Automatic (DHCP) → Manual 변경'],
+                    ['3', '아래 값 입력 후 Save → Done'],
                   ].map(([n, t]) => (
                     <div key={n} className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
@@ -636,14 +469,14 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    ["Subnet", `${aiIP}/${pfx}`],
-                    ["Address", aiIP],
-                    ["Gateway", gw],
-                    ["Name servers", dns],
-                    ["Search domains", "(비워두기)"],
-                    ["OpenSSH Server", "✅ 설치 체크 필수"],
+                    ['Subnet',        `${aiIP}/${pfx}`],
+                    ['Address',       aiIP],
+                    ['Gateway',       gw],
+                    ['Name servers',  dns],
+                    ['Search domains','(비워두기)'],
+                    ['OpenSSH Server','✅ 설치 체크 필수'],
                   ].map(([k, v]) => (
-                    <div key={k} className={`p-2 rounded-lg border ${k === "Subnet" || k === "Address" || k === "Gateway" || k === "Name servers" ? "bg-purple-900/20 border-purple-600/40" : "bg-slate-700/50 border-slate-600"}`}>
+                    <div key={k} className={`p-2 rounded-lg border ${['Subnet','Address','Gateway','Name servers'].includes(k) ? 'bg-purple-900/20 border-purple-600/40' : 'bg-slate-700/50 border-slate-600'}`}>
                       <div className="text-xs text-slate-500 mb-0.5">{k}</div>
                       <div className="text-sm font-mono text-purple-300">{v}</div>
                     </div>
@@ -651,14 +484,12 @@ ping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
                 </div>
               </div>
               <Note type="tip">설치 완료 후 VM이 부팅되면 즉시 SSH 접속 가능합니다.</Note>
-              <CodeBlock label="내 PC 터미널" code={`ssh ubuntu@${aiIP}
-
-sudo apt update && sudo apt upgrade -y`} />
+              <CodeBlock label="내 PC 터미널" code={`ssh ubuntu@${aiIP}\n\nsudo apt update && sudo apt upgrade -y`} />
             </>
           ),
         },
         {
-          title: "Docker 설치",
+          title: 'Docker 설치',
           body: () => (
             <>
               <CodeBlock label="AI VM SSH" code={`# Docker 공식 설치 스크립트\ncurl -fsSL https://get.docker.com | sudo bash\n\n# 현재 유저를 docker 그룹에 추가\nsudo usermod -aG docker $USER\nnewgrp docker\n\n# 설치 확인\ndocker --version && docker compose version`} />
@@ -666,7 +497,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "Ollama 설치 (로컬 LLM 엔진)",
+          title: 'Ollama 설치 (로컬 LLM 엔진)',
           body: () => (
             <>
               <CodeBlock label="AI VM SSH" code={`# Ollama 설치\ncurl -fsSL https://ollama.com/install.sh | sh\n\n# 외부 접근 허용 설정\nsudo systemctl edit ollama --force`} />
@@ -678,7 +509,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "Dify 설치 (AI 에이전트 빌더)",
+          title: 'Dify 설치 (AI 에이전트 빌더)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">마우스 클릭으로 AI 워크플로우·에이전트·RAG를 만드는 오픈소스 플랫폼입니다.</p>
@@ -690,7 +521,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "Gemma2 + Claude Code API 하이브리드 구성",
+          title: 'Gemma2 + Claude Code API 하이브리드 구성',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">Dify 웹 UI → 우측 상단 프로필 → <strong>설정 → 모델 공급자</strong>에서 두 모델을 모두 등록합니다.</p>
@@ -710,8 +541,8 @@ sudo apt update && sudo apt upgrade -y`} />
               <p className="text-white font-semibold text-sm mb-2">⚡ 하이브리드 라우팅 전략</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {[
-                  { icon: "🟣", title: "Gemma2 (로컬·무료)", badge: "bg-purple-500/20 text-purple-300", tasks: ["일상 대화·한국어 Q&A", "단순 요약·번역", "파일 분류·태깅", "반복 자동화 작업"] },
-                  { icon: "🔵", title: "Claude Code (API)", badge: "bg-cyan-500/20 text-cyan-300", tasks: ["코드 생성·디버깅", "복잡한 로직 분석", "긴 문서·논문 처리", "정밀 답변이 필요한 작업"] },
+                  { icon: '🟣', title: 'Gemma2 (로컬·무료)',  badge: 'bg-purple-500/20 text-purple-300', tasks: ['일상 대화·한국어 Q&A', '단순 요약·번역', '파일 분류·태깅', '반복 자동화 작업'] },
+                  { icon: '🔵', title: 'Claude Code (API)',  badge: 'bg-cyan-500/20 text-cyan-300',    tasks: ['코드 생성·디버깅', '복잡한 로직 분석', '긴 문서·논문 처리', '정밀 답변이 필요한 작업'] },
                 ].map((m, i) => (
                   <div key={i} className="p-4 bg-slate-800 rounded-xl border border-slate-700">
                     <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full mb-3 ${m.badge}`}>{m.icon} {m.title}</div>
@@ -731,19 +562,19 @@ sudo apt update && sudo apt upgrade -y`} />
 
     /* ══════════════════════════════════════ STEP 4 Windows */
     {
-      id: 4, title: "VM3 · Windows 11", subtitle: "개발 & 인터넷 작업용", icon: "💻", color: "from-cyan-600 to-blue-600",
+      id: 4, title: 'VM3 · Windows 11', subtitle: '개발 & 인터넷 작업용', icon: '💻', color: 'from-cyan-600 to-blue-600',
       sections: [
         {
-          title: "VM 생성 설정 (VM ID: 102)",
+          title: 'VM 생성 설정 (VM ID: 102)',
           body: () => (
             <>
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
-                  ["VM ID", "102"], ["이름", "windows-work"],
-                  ["OS ISO", "Windows 11 Pro ISO"], ["Machine 타입", "q35"],
-                  ["BIOS", "OVMF (UEFI) — 필수!"], ["TPM", "TPM State 추가 → v2.0"],
-                  ["CPU 코어", "2 (업그레이드 후 6)"], ["RAM", "2048 MB (2 GB) → 업그레이드 후 8192 MB"],
-                  ["디스크 크기", "100 GB (M.2 SSD)"], ["예상 IP", winIP],
+                  ['VM ID', '102'], ['이름', 'windows-work'],
+                  ['OS ISO', 'Windows 11 Pro ISO'], ['Machine 타입', 'q35'],
+                  ['BIOS', 'OVMF (UEFI) — 필수!'], ['TPM', 'TPM State 추가 → v2.0'],
+                  ['CPU 코어', '2 (업그레이드 후 6)'], ['RAM', '2048 MB (2 GB) → 업그레이드 후 8192 MB'],
+                  ['디스크 크기', '100 GB (M.2 SSD)'], ['예상 IP', winIP],
                 ].map(([k, v], i) => (
                   <div key={i} className="p-2 bg-slate-800 rounded-lg border border-slate-700">
                     <div className="text-xs text-slate-500 mb-0.5">{k}</div>
@@ -756,7 +587,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "VirtIO 드라이버 추가 (성능 필수)",
+          title: 'VirtIO 드라이버 추가 (성능 필수)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">VirtIO 드라이버 없이는 Windows에서 디스크/네트워크가 느리거나 안 잡힙니다.</p>
@@ -766,21 +597,21 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "정품 인증 없이 사용 가능한 기능",
+          title: '정품 인증 없이 사용 가능한 기능',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">정품 인증 없이도 개발·인터넷 목적은 100% 정상 작동합니다:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                 {[
-                  { label: "크롬 / 엣지 브라우저", ok: true },
-                  { label: "Cursor IDE (개발 도구)", ok: true },
-                  { label: "HTS 주식 프로그램", ok: true },
-                  { label: "원격 데스크탑 (RDP)", ok: true },
-                  { label: "바탕화면 테마/색상 변경", ok: false },
-                  { label: "배경화면 워터마크 제거", ok: false },
+                  { label: '크롬 / 엣지 브라우저',    ok: true  },
+                  { label: 'Cursor IDE (개발 도구)',   ok: true  },
+                  { label: 'HTS 주식 프로그램',       ok: true  },
+                  { label: '원격 데스크탑 (RDP)',      ok: true  },
+                  { label: '바탕화면 테마/색상 변경',  ok: false },
+                  { label: '배경화면 워터마크 제거',   ok: false },
                 ].map((f, i) => (
-                  <div key={i} className={`flex items-center gap-2 p-2.5 rounded-lg text-sm border ${f.ok ? "bg-emerald-900/20 border-emerald-600/30 text-emerald-300" : "bg-slate-800 border-slate-700 text-slate-500"}`}>
-                    <span>{f.ok ? "✓" : "✗"}</span>
+                  <div key={i} className={`flex items-center gap-2 p-2.5 rounded-lg text-sm border ${f.ok ? 'bg-emerald-900/20 border-emerald-600/30 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                    <span>{f.ok ? '✓' : '✗'}</span>
                     <span>{f.label}</span>
                   </div>
                 ))}
@@ -789,7 +620,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "원격 데스크탑 (RDP) 설정",
+          title: '원격 데스크탑 (RDP) 설정',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">Windows 설정 → 시스템 → 원격 데스크탑 → 켜기 활성화</p>
@@ -803,10 +634,10 @@ sudo apt update && sudo apt upgrade -y`} />
 
     /* ══════════════════════════════════════ STEP 5 야간 절전 */
     {
-      id: 5, title: "야간 절전 모드", subtitle: "23:00 자동 종료 → 08:00 자동 부팅", icon: "🌙", color: "from-indigo-600 to-slate-700",
+      id: 5, title: '야간 절전 모드', subtitle: '23:00 자동 종료 → 08:00 자동 부팅', icon: '🌙', color: 'from-indigo-600 to-slate-700',
       sections: [
         {
-          title: "야간 절전 스케줄 개요",
+          title: '야간 절전 스케줄 개요',
           body: () => (
             <>
               <NightModeTimeline />
@@ -815,7 +646,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "바이오스(BIOS) RTC 알람 설정",
+          title: '바이오스(BIOS) RTC 알람 설정',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">PC가 완전히 꺼진 상태에서도 자동으로 켜지려면 바이오스 설정이 먼저 필요합니다.</p>
@@ -830,7 +661,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "야간 종료 스크립트 생성",
+          title: '야간 종료 스크립트 생성',
           body: () => (
             <>
               <CodeBlock label="Proxmox Shell" code={`cat > /usr/local/bin/night-mode.sh << 'EOF'\n#!/bin/bash\nLOG="/var/log/night-mode.log"\necho "$(date): 야간 절전 모드 시작" >> $LOG\n\n# 모든 VM 순차 종료 (100=NAS, 101=AI, 102=Windows)\nfor VMID in 102 101 100; do\n  STATUS=$(qm status $VMID 2>/dev/null | awk '{print $2}')\n  if [ "$STATUS" = "running" ]; then\n    echo "$(date): VM $VMID 종료 중..." >> $LOG\n    qm shutdown $VMID --timeout 90\n  fi\ndone\n\n# 종료 대기 (최대 2분)\nsleep 120\necho "$(date): 모든 VM 종료 완료. 다음 기동: 08:00" >> $LOG\n\n# 다음 날 08:00에 자동 부팅 후 전원 OFF\n/usr/sbin/rtcwake -m off -t $(date --date "tomorrow 08:00" +%s)\nEOF\n\nchmod +x /usr/local/bin/night-mode.sh`} />
@@ -838,7 +669,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "크론(Cron) 자동 실행 등록",
+          title: '크론(Cron) 자동 실행 등록',
           body: () => (
             <>
               <CodeBlock label="Proxmox Shell" code="crontab -e" />
@@ -850,7 +681,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "수동 제어 명령어",
+          title: '수동 제어 명령어',
           body: () => (
             <>
               <CodeBlock label="Proxmox Shell — 즉시 야간 모드 테스트" code="/usr/local/bin/night-mode.sh" />
@@ -865,26 +696,26 @@ sudo apt update && sudo apt upgrade -y`} />
 
     /* ══════════════════════════════════════ STEP 6 RAM 업그레이드 */
     {
-      id: 6, title: "RAM 업그레이드", subtitle: "32GB 장착 후 VM 설정 변경", icon: "⬆️", color: "from-emerald-500 to-teal-600",
+      id: 6, title: 'RAM 업그레이드', subtitle: '32GB 장착 후 VM 설정 변경', icon: '⬆️', color: 'from-emerald-500 to-teal-600',
       sections: [
         {
-          title: "준비 사항",
+          title: '준비 사항',
           body: () => (
             <>
               <Checklist items={[
-                "PC 완전 종료 (Proxmox 웹 UI → 모든 VM 종료 → 호스트 Shutdown)",
-                "전원 케이블 분리 후 케이스 오픈",
-                "기존 8GB DDR4 3200 모듈 제거",
-                "32GB DDR4 3200 모듈 2개(16GB×2) 또는 1개(32GB) 장착",
-                "케이스 조립 후 전원 켜기",
-                "Proxmox 부팅 확인 — 웹 UI에서 RAM 32GB 인식 확인",
+                'PC 완전 종료 (Proxmox 웹 UI → 모든 VM 종료 → 호스트 Shutdown)',
+                '전원 케이블 분리 후 케이스 오픈',
+                '기존 8GB DDR4 3200 모듈 제거',
+                '32GB DDR4 3200 모듈 2개(16GB×2) 또는 1개(32GB) 장착',
+                '케이스 조립 후 전원 켜기',
+                'Proxmox 부팅 확인 — 웹 UI에서 RAM 32GB 인식 확인',
               ]} />
               <Note type="tip">Proxmox 웹 UI → 왼쪽 트리에서 homelab 클릭 → Summary 탭 → Memory 항목에서 32GB 인식 여부 확인.</Note>
             </>
           ),
         },
         {
-          title: "각 VM RAM · CPU 증설 (Proxmox 명령어)",
+          title: '각 VM RAM · CPU 증설 (Proxmox 명령어)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">VM을 종료한 상태에서 Proxmox Shell에서 아래 명령을 실행합니다.</p>
@@ -895,7 +726,7 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "AI 모델 업그레이드 (gemma2:2b → gemma2 9B)",
+          title: 'AI 모델 업그레이드 (gemma2:2b → gemma2 9B)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-2">RAM이 20GB로 늘어났으니 풀 사이즈 Gemma2 9B 모델로 교체합니다.</p>
@@ -913,22 +744,22 @@ sudo apt update && sudo apt upgrade -y`} />
           ),
         },
         {
-          title: "업그레이드 후 최종 자원 배분 확인",
+          title: '업그레이드 후 최종 자원 배분 확인',
           body: () => (
             <div className="grid grid-cols-2 gap-2">
               {[
-                ["VM1 NAS — CPU", "2 vCPU (유지)"],
-                ["VM1 NAS — RAM", "2 GB → 4 GB ✓"],
-                ["VM2 AI — CPU", "4 vCPU → 8 vCPU ✓"],
-                ["VM2 AI — RAM", "4 GB → 20 GB ✓"],
-                ["VM3 Windows — CPU", "2 vCPU → 6 vCPU ✓"],
-                ["VM3 Windows — RAM", "2 GB → 8 GB ✓"],
-                ["AI 모델", "gemma2:2b → gemma2 9B ✓"],
-                ["Windows 동시 구동", "권장 안함 → 상시 가능 ✓"],
+                ['VM1 NAS — CPU',      '2 vCPU (유지)'],
+                ['VM1 NAS — RAM',      '2 GB → 4 GB ✓'],
+                ['VM2 AI — CPU',       '4 vCPU → 8 vCPU ✓'],
+                ['VM2 AI — RAM',       '4 GB → 20 GB ✓'],
+                ['VM3 Windows — CPU',  '2 vCPU → 6 vCPU ✓'],
+                ['VM3 Windows — RAM',  '2 GB → 8 GB ✓'],
+                ['AI 모델',            'gemma2:2b → gemma2 9B ✓'],
+                ['Windows 동시 구동', '권장 안함 → 상시 가능 ✓'],
               ].map(([k, v], i) => (
                 <div key={i} className="p-2 bg-slate-800 rounded-lg border border-slate-700">
                   <div className="text-xs text-slate-500 mb-0.5">{k}</div>
-                  <div className={`text-sm font-mono ${v.includes("✓") ? "text-emerald-400" : "text-white"}`}>{v}</div>
+                  <div className={`text-sm font-mono ${v.includes('✓') ? 'text-emerald-400' : 'text-white'}`}>{v}</div>
                 </div>
               ))}
             </div>
@@ -947,15 +778,15 @@ sudo apt update && sudo apt upgrade -y`} />
     <div className="min-h-screen bg-slate-950 text-white" style={{ fontFamily: "'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" }}>
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden border-b border-slate-800" style={{ background: "linear-gradient(135deg, #0f172a 0%, #0a0f1e 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(6,182,212,0.10) 0%, transparent 55%)" }} />
+      <div className="relative overflow-hidden border-b border-slate-800" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #0a0f1e 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(6,182,212,0.10) 0%, transparent 55%)' }} />
         <div className="max-w-5xl mx-auto px-4 py-10 relative">
           <div className="flex flex-wrap gap-2 mb-4">
             <span className="text-xs font-bold px-3 py-1 bg-cyan-500/15 text-cyan-400 rounded-full border border-cyan-500/30">100% 무료 오픈소스</span>
             <span className="text-xs font-bold px-3 py-1 bg-purple-500/15 text-purple-400 rounded-full border border-purple-500/30">초보자 완전 따라하기</span>
             <span className="text-xs font-bold px-3 py-1 bg-amber-500/15 text-amber-400 rounded-full border border-amber-500/30">Ryzen 5825U 최적화</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black mb-3 leading-tight" style={{ background: "linear-gradient(90deg, #fff 0%, #a5f3fc 50%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h1 className="text-3xl md:text-5xl font-black mb-3 leading-tight" style={{ background: 'linear-gradient(90deg, #fff 0%, #a5f3fc 50%, #c4b5fd 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             🏠 홈랩 완전 정복 가이드
           </h1>
           <p className="text-slate-400 text-sm md:text-base mb-6 max-w-2xl leading-relaxed">
@@ -971,7 +802,6 @@ sudo apt update && sudo apt upgrade -y`} />
               <span className="text-xs text-slate-500 hidden sm:inline">— 값을 수정하면 전체 가이드에 자동 반영됩니다</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              {/* Proxmox 관리 IP */}
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Proxmox 관리 IP</label>
                 <div className="flex gap-1">
@@ -994,7 +824,6 @@ sudo apt update && sudo apt upgrade -y`} />
                   </div>
                 </div>
               </div>
-              {/* 게이트웨이 */}
               <div>
                 <label className="text-xs text-slate-400 block mb-1">게이트웨이 (Gateway)</label>
                 <input
@@ -1005,7 +834,6 @@ sudo apt update && sudo apt upgrade -y`} />
                   placeholder="10.179.93.62"
                 />
               </div>
-              {/* DNS */}
               <div>
                 <label className="text-xs text-slate-400 block mb-1">DNS 서버</label>
                 <input
@@ -1017,13 +845,12 @@ sudo apt update && sudo apt upgrade -y`} />
                 />
               </div>
             </div>
-            {/* 파생 VM IP 미리보기 */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { label: "⚙️ Proxmox", ip: pxIP, port: ":8006" },
-                { label: "🗄️ NAS (VM1)", ip: nasIP, port: "" },
-                { label: "🤖 AI (VM2)", ip: aiIP, port: "" },
-                { label: "💻 Windows (VM3)", ip: winIP, port: "" },
+                { label: '⚙️ Proxmox',       ip: pxIP,  port: ':8006' },
+                { label: '🗄️ NAS (VM1)',     ip: nasIP, port: ''      },
+                { label: '🤖 AI (VM2)',       ip: aiIP,  port: ''      },
+                { label: '💻 Windows (VM3)', ip: winIP, port: ''      },
               ].map(({ label, ip, port }) => (
                 <div key={label} className="px-3 py-2 bg-slate-900/80 rounded-xl border border-slate-700">
                   <div className="text-xs text-slate-500 mb-0.5">{label}</div>
@@ -1036,10 +863,10 @@ sudo apt update && sudo apt upgrade -y`} />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: "🗄️", label: "NAS 서버", desc: "영화·사진 스트리밍" },
-              { icon: "🤖", label: "AI 에이전트", desc: "Gemma2 + Claude" },
-              { icon: "💻", label: "Windows 11", desc: "개발 & 인터넷" },
-              { icon: "🌙", label: "야간 절전", desc: "23시 꺼짐·8시 켜짐" },
+              { icon: '🗄️', label: 'NAS 서버',   desc: '영화·사진 스트리밍' },
+              { icon: '🤖', label: 'AI 에이전트', desc: 'Gemma2 + Claude' },
+              { icon: '💻', label: 'Windows 11', desc: '개발 & 인터넷' },
+              { icon: '🌙', label: '야간 절전',   desc: '23시 꺼짐·8시 켜짐' },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
                 <span className="text-xl flex-shrink-0">{f.icon}</span>
@@ -1061,21 +888,21 @@ sudo apt update && sudo apt upgrade -y`} />
             <div>
               <h2 className="text-xl font-bold text-white">📊 자원 배분 계획</h2>
               <p className="text-slate-500 text-sm mt-1">
-                {ramPhase === "now" ? "🔧 현재 · DDR4 8GB 기준" : "⬆ 32GB 업그레이드 후 최적 배분"}
+                {ramPhase === 'now' ? '🔧 현재 · DDR4 8GB 기준' : '⬆ 32GB 업그레이드 후 최적 배분'}
               </p>
             </div>
             <div className="flex gap-1 p-1 bg-slate-800 rounded-xl border border-slate-700 flex-shrink-0">
-              <button onClick={() => setRamPhase("now")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${ramPhase === "now" ? "bg-amber-500 text-white shadow-md" : "text-slate-400 hover:text-white"}`}>
+              <button onClick={() => setRamPhase('now')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${ramPhase === 'now' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                 🔧 현재 · 8GB
               </button>
-              <button onClick={() => setRamPhase("after")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${ramPhase === "after" ? "bg-emerald-500 text-white shadow-md" : "text-slate-400 hover:text-white"}`}>
+              <button onClick={() => setRamPhase('after')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${ramPhase === 'after' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                 ⬆ 업그레이드 후 · 32GB
               </button>
             </div>
           </div>
-          {ramPhase === "now" && (
+          {ramPhase === 'now' && (
             <div className="my-3 p-3 bg-amber-900/20 rounded-xl border border-amber-500/30 text-xs text-amber-300 flex items-start gap-2">
               <span className="text-base flex-shrink-0">⚠️</span>
               <span>8GB에서는 <strong>VM3 Windows를 동시 구동하지 않는 것</strong>을 권장합니다. 사용할 때만 켜고 평소엔 종료 상태로 유지하세요.</span>
@@ -1084,22 +911,22 @@ sudo apt update && sudo apt upgrade -y`} />
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3">
             <div className="md:col-span-2 bg-slate-900 rounded-2xl p-5 border border-slate-700">
               <p className="text-xs text-slate-500 font-semibold uppercase mb-4">전체 사용량</p>
-              <ResourceBar label="CPU (vCPU)" used={ramPhase === "now" ? 8 : 16} total={16} unit="" color="bg-gradient-to-r from-cyan-500 to-blue-500" />
-              <ResourceBar label="RAM" used={ramPhase === "now" ? 8 : 32} total={32} unit=" GB" color="bg-gradient-to-r from-purple-500 to-violet-500" />
+              <ResourceBar label="CPU (vCPU)" used={ramPhase === 'now' ? 8 : 16} total={16} unit="" color="bg-gradient-to-r from-cyan-500 to-blue-500" />
+              <ResourceBar label="RAM" used={ramPhase === 'now' ? 8 : 32} total={32} unit=" GB" color="bg-gradient-to-r from-purple-500 to-violet-500" />
               <ResourceBar label="M.2 SSD" used={512} total={512} unit=" GB" color="bg-gradient-to-r from-amber-500 to-orange-500" />
               <ResourceBar label="HDD" used={1000} total={1000} unit=" GB" color="bg-gradient-to-r from-emerald-500 to-green-500" />
             </div>
             <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(ramPhase === "now" ? [
-                { name: "VM1 · NAS 서버", icon: "🗄️", color: "border-blue-500/60", badge: "bg-blue-500/15 text-blue-300 border border-blue-500/30", cpu: "2 vCPU", ram: "2 GB", disk: "60GB M.2 + 1TB HDD", sw: "Ubuntu + CasaOS + Jellyfin" },
-                { name: "VM2 · AI 에이전트", icon: "🤖", color: "border-purple-500/60", badge: "bg-purple-500/15 text-purple-300 border border-purple-500/30", cpu: "4 vCPU", ram: "4 GB", disk: "350GB M.2", sw: "Ollama(gemma2:2b) + Dify" },
-                { name: "VM3 · Windows 11", icon: "💻", color: "border-slate-500/60", badge: "bg-slate-600/40 text-slate-400 border border-slate-500/30", cpu: "2 vCPU", ram: "2 GB", disk: "100GB M.2", sw: "⚠ 사용 시에만 켜기 권장" },
-                { name: "Proxmox 호스트", icon: "⚙️", color: "border-slate-600", badge: "bg-slate-700/40 text-slate-400 border border-slate-600", cpu: "공유", ram: "~512 MB", disk: "2GB M.2 (시스템)", sw: "Proxmox VE 8.x 하이퍼바이저" },
+              {(ramPhase === 'now' ? [
+                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '2 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + CasaOS + Jellyfin'    },
+                { name: 'VM2 · AI 에이전트', icon: '🤖', color: 'border-purple-500/60', badge: 'bg-purple-500/15 text-purple-300 border border-purple-500/30', cpu: '4 vCPU', ram: '4 GB',  disk: '350GB M.2',          sw: 'Ollama(gemma2:2b) + Dify'       },
+                { name: 'VM3 · Windows 11', icon: '💻', color: 'border-slate-500/60',   badge: 'bg-slate-600/40 text-slate-400 border border-slate-500/30',   cpu: '2 vCPU', ram: '2 GB',  disk: '100GB M.2',          sw: '⚠ 사용 시에만 켜기 권장'         },
+                { name: 'Proxmox 호스트',   icon: '⚙️', color: 'border-slate-600',      badge: 'bg-slate-700/40 text-slate-400 border border-slate-600',      cpu: '공유',   ram: '~512 MB', disk: '2GB M.2 (시스템)', sw: 'Proxmox VE 8.x 하이퍼바이저'   },
               ] : [
-                { name: "VM1 · NAS 서버", icon: "🗄️", color: "border-blue-500/60", badge: "bg-blue-500/15 text-blue-300 border border-blue-500/30", cpu: "2 vCPU", ram: "4 GB", disk: "60GB M.2 + 1TB HDD", sw: "Ubuntu + CasaOS + Jellyfin" },
-                { name: "VM2 · AI 에이전트", icon: "🤖", color: "border-purple-500/60", badge: "bg-purple-500/15 text-purple-300 border border-purple-500/30", cpu: "8 vCPU", ram: "20 GB", disk: "350GB M.2", sw: "Ollama(gemma2 9B) + Dify" },
-                { name: "VM3 · Windows 11", icon: "💻", color: "border-cyan-500/60", badge: "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30", cpu: "6 vCPU", ram: "8 GB", disk: "100GB M.2", sw: "Windows 11 Pro + Cursor" },
-                { name: "Proxmox 호스트", icon: "⚙️", color: "border-slate-600", badge: "bg-slate-700/40 text-slate-400 border border-slate-600", cpu: "공유", ram: "~2 GB 예비", disk: "2GB M.2 (시스템)", sw: "Proxmox VE 8.x 하이퍼바이저" },
+                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '4 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + CasaOS + Jellyfin'    },
+                { name: 'VM2 · AI 에이전트', icon: '🤖', color: 'border-purple-500/60', badge: 'bg-purple-500/15 text-purple-300 border border-purple-500/30', cpu: '8 vCPU', ram: '20 GB', disk: '350GB M.2',          sw: 'Ollama(gemma2 9B) + Dify'       },
+                { name: 'VM3 · Windows 11', icon: '💻', color: 'border-cyan-500/60',    badge: 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30',      cpu: '6 vCPU', ram: '8 GB',  disk: '100GB M.2',          sw: 'Windows 11 Pro + Cursor'        },
+                { name: 'Proxmox 호스트',   icon: '⚙️', color: 'border-slate-600',      badge: 'bg-slate-700/40 text-slate-400 border border-slate-600',      cpu: '공유',   ram: '~2 GB 예비', disk: '2GB M.2 (시스템)', sw: 'Proxmox VE 8.x 하이퍼바이저' },
               ]).map((vm, i) => (
                 <div key={i} className={`bg-slate-900 rounded-xl p-4 border ${vm.color}`}>
                   <div className="flex items-center gap-2 mb-3">
@@ -1128,7 +955,7 @@ sudo apt update && sudo apt upgrade -y`} />
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all border ${
                 activeStep === s.id
                   ? `bg-gradient-to-r ${s.color} border-transparent text-white shadow-lg shadow-black/30`
-                  : "bg-slate-800/70 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500"
+                  : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500'
               }`}
             >
               <span>{s.icon}</span>
@@ -1159,7 +986,7 @@ sudo apt update && sudo apt upgrade -y`} />
                     onClick={() => toggleSection(i)}
                   >
                     <span className="font-semibold text-white text-sm">{sec.title}</span>
-                    <span className={`text-slate-400 text-xs transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>▼</span>
+                    <span className={`text-slate-400 text-xs transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
                   {isOpen && (
                     <div className="p-5 bg-slate-900/50">
@@ -1177,13 +1004,13 @@ sudo apt update && sudo apt upgrade -y`} />
             </button>
             <button onClick={() => goTo(Math.min(STEPS.length - 1, activeStep + 1))} disabled={activeStep === STEPS.length - 1}
               className="px-5 py-2 rounded-xl text-white font-semibold disabled:opacity-25 transition-opacity text-sm"
-              style={{ background: "linear-gradient(90deg, #0891b2, #7c3aed)" }}>
+              style={{ background: 'linear-gradient(90deg, #0891b2, #7c3aed)' }}>
               다음 단계 →
             </button>
           </div>
         </div>
 
-        {/* ── Quick Reference Table (동적 IP 반영) ── */}
+        {/* ── Quick Reference Table ── */}
         <div className="bg-slate-900/70 rounded-2xl border border-slate-700 p-5 mb-8">
           <h3 className="text-lg font-bold text-white mb-4">📋 서비스 주소 & 포트 빠른 참조표</h3>
           <div className="overflow-x-auto">
@@ -1197,13 +1024,13 @@ sudo apt update && sudo apt upgrade -y`} />
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {[
-                  ["⚙️ Proxmox 관리 UI", `https://${pxIP}:8006`, "VM 생성·관리 웹 대시보드"],
-                  ["🏠 CasaOS (NAS)", `http://${nasIP}`, "파일·스토리지 관리 대시보드"],
-                  ["🎬 Jellyfin 스트리밍", `http://${nasIP}:8096`, "미디어 서버 (Google TV·모바일)"],
-                  ["📁 Samba 파일 공유", `\\\\${nasIP}\\media`, "Windows 네트워크 드라이브"],
-                  ["🤖 Dify AI 빌더", `http://${aiIP}`, "AI 에이전트·워크플로우"],
-                  ["🦙 Ollama API", `http://${aiIP}:11434`, "Gemma2 로컬 LLM API"],
-                  ["💻 Windows RDP", `${winIP}:3389`, "원격 데스크탑 접속"],
+                  ['⚙️ Proxmox 관리 UI',  `https://${pxIP}:8006`,   'VM 생성·관리 웹 대시보드'],
+                  ['🏠 CasaOS (NAS)',      `http://${nasIP}`,         '파일·스토리지 관리 대시보드'],
+                  ['🎬 Jellyfin 스트리밍', `http://${nasIP}:8096`,    '미디어 서버 (Google TV·모바일)'],
+                  ['📁 Samba 파일 공유',   `\\\\${nasIP}\\media`,     'Windows 네트워크 드라이브'],
+                  ['🤖 Dify AI 빌더',      `http://${aiIP}`,          'AI 에이전트·워크플로우'],
+                  ['🦙 Ollama API',        `http://${aiIP}:11434`,    'Gemma2 로컬 LLM API'],
+                  ['💻 Windows RDP',       `${winIP}:3389`,           '원격 데스크탑 접속'],
                 ].map(([svc, addr, use], i) => (
                   <tr key={i}>
                     <td className="py-2.5 pr-4 text-slate-300 whitespace-nowrap">{svc}</td>
