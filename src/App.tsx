@@ -360,20 +360,20 @@ export default function App() {
               </p>
 
               {/* 네트워크 구조 다이어그램 */}
-              <div className="p-4 bg-slate-800/60 rounded-xl border border-teal-500/30 mb-4">
+              <div className="p-4 bg-slate-800/60 rounded-xl border border-teal-500/30 mb-6">
                 <p className="text-xs font-semibold text-teal-300 mb-3">🔌 홈랩 네트워크 구조</p>
                 <div className="flex flex-col gap-2 text-xs font-mono">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-1 rounded bg-slate-700 border border-slate-600 text-slate-300">🌍 인터넷</span>
                     <span className="text-slate-600">──</span>
-                    <span className="px-2 py-1 rounded bg-teal-900/40 border border-teal-500/50 text-teal-300">🔧 공유기 (게이트웨이 {gw})</span>
+                    <span className="px-2 py-1 rounded bg-teal-900/40 border border-teal-500/50 text-teal-300">🔧 딜라이브 공유기 (192.168.200.254)</span>
                   </div>
                   <div className="ml-4 pl-4 border-l-2 border-slate-700 flex flex-col gap-1.5">
                     {[
-                      { icon: '⚙️', label: `Proxmox 호스트`, ip: pxIP },
-                      { icon: '🗄️', label: `VM1 · NAS`,      ip: nasIP },
-                      { icon: '🤖', label: `VM2 · AI`,        ip: aiIP },
-                      { icon: '💻', label: `VM3 · Windows`,   ip: winIP },
+                      { icon: '⚙️', label: 'Proxmox 호스트', ip: pxIP },
+                      { icon: '🗄️', label: 'VM1 · NAS',      ip: nasIP },
+                      { icon: '🤖', label: 'VM2 · AI',        ip: aiIP },
+                      { icon: '💻', label: 'VM3 · Windows',   ip: winIP },
                     ].map(({ icon, label, ip }) => (
                       <div key={ip} className="flex items-center gap-2">
                         <span className="text-slate-600">├─</span>
@@ -385,22 +385,80 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 공유기 접속 */}
-              <p className="text-white font-semibold text-sm mb-2">공유기 관리 페이지 접속</p>
-              <BrowserBar url={`http://${gw}`} className="mb-3" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3 text-xs">
-                {[
-                  { name: 'ipTIME · ASUS · TP-Link', addr: `http://${gw}` },
-                  { name: 'KT 홈허브',               addr: 'http://192.168.219.1' },
-                  { name: 'SK / LG 공유기',          addr: 'http://192.168.35.1' },
-                ].map(r => (
-                  <div key={r.name} className="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
-                    <p className="text-slate-500 mb-1">{r.name}</p>
-                    <code className="text-cyan-400">{r.addr}</code>
-                  </div>
-                ))}
+              {/* 딜라이브 공유기 접속 */}
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-teal-500 text-white">딜라이브 (Netis 공유기)</span>
               </div>
-              <Note type="tip">공유기 관리자 계정 기본값은 보통 <strong>admin / admin</strong> 또는 공유기 뒷면 스티커에 적혀 있습니다.</Note>
+              <p className="text-white font-semibold text-sm mb-3">① 공유기 관리 페이지 접속</p>
+              <p className="text-xs text-slate-400 mb-2">홈랩 PC와 <strong className="text-white">같은 공유기에 연결된</strong> PC 또는 노트북의 브라우저에서 아래 주소를 입력합니다.</p>
+              <BrowserBar url="http://192.168.200.254:10010" className="mb-3" />
+              <Note type="info">구버전 딜라이브 공유기는 포트가 <code className="bg-slate-700 px-1 rounded text-cyan-400">:8080</code> 일 수 있습니다. 위 주소가 안 열리면 <code className="bg-slate-700 px-1 rounded text-cyan-400">http://192.168.200.254:8080</code> 을 시도해보세요.</Note>
+
+              {/* 로그인 방법 */}
+              <p className="text-white font-semibold text-sm mt-5 mb-2">② 관리자 로그인</p>
+              <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">아이디 (Username)</p>
+                    <div className="bg-slate-900 border border-slate-600 rounded px-3 py-2 font-mono text-cyan-400 text-sm">admin</div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">비밀번호 (Password)</p>
+                    <div className="bg-slate-900 border border-slate-600 rounded px-3 py-2 font-mono text-cyan-400 text-sm">admin<span className="text-amber-400">XXXX</span></div>
+                    <p className="text-xs text-slate-500 mt-1"><span className="text-amber-400">XXXX</span> = Wi-Fi 이름(SSID) 마지막 숫자 4자리</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 비밀번호 찾는 방법 */}
+              <div className="p-4 bg-amber-900/15 rounded-xl border border-amber-500/30 mb-4">
+                <p className="text-xs font-semibold text-amber-300 mb-2">📋 비밀번호 숫자 4자리 찾는 방법</p>
+                <div className="space-y-2 text-xs text-slate-300">
+                  <div className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">A</span>
+                    <div>
+                      <p className="font-semibold">공유기 본체 확인 (가장 쉬움)</p>
+                      <p className="text-slate-400">공유기 상단 또는 뒷면 스티커 → <strong className="text-white">SSID</strong> 또는 <strong className="text-white">Wi-Fi 이름</strong> 항목의 마지막 숫자 4자리</p>
+                      <p className="text-slate-500 mt-0.5">예: SSID가 <code className="bg-slate-800 px-1 rounded text-amber-300">Dlive_1234</code> 이면 비밀번호 → <code className="bg-slate-800 px-1 rounded text-cyan-400">admin1234</code></p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">B</span>
+                    <div>
+                      <p className="font-semibold">시리얼 번호로 확인</p>
+                      <p className="text-slate-400">공유기 뒷면 <strong className="text-white">시리얼 번호</strong> 마지막 4자리를 admin 뒤에 붙입니다.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-slate-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">C</span>
+                    <div>
+                      <p className="font-semibold text-slate-400">초기화</p>
+                      <p className="text-slate-500">위 방법 모두 실패 시 공유기 뒷면 Reset 버튼을 10초 이상 눌러 초기화 후 재시도</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 로그인 후 화면 */}
+              <p className="text-white font-semibold text-sm mb-2">③ 로그인 후 — 관리 메뉴 구조</p>
+              <div className="p-4 bg-slate-900 rounded-xl border border-slate-700">
+                <p className="text-xs text-slate-500 mb-3">딜라이브(Netis) 공유기 관리 페이지 주요 메뉴</p>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { menu: '상태(Status)',           desc: '연결된 기기 목록, IP 현황 확인',                     color: 'text-slate-400' },
+                    { menu: 'LAN 설정',               desc: 'DHCP 서버 설정 → 여기서 IP 예약(Static IP)',         color: 'text-cyan-300'  },
+                    { menu: '포트 포워딩 / 가상 서버', desc: '외부 포트 → 내부 IP:포트 매핑 설정',                 color: 'text-amber-300' },
+                    { menu: '무선 설정',               desc: 'Wi-Fi 이름(SSID) · 비밀번호 변경',                  color: 'text-slate-400' },
+                    { menu: '고급 설정',               desc: 'DMZ · UPnP · 펌웨어 업데이트',                     color: 'text-slate-400' },
+                  ].map(({ menu, desc, color }) => (
+                    <div key={menu} className="flex items-start gap-3 py-1.5 border-b border-slate-800 last:border-0">
+                      <span className={`font-semibold w-36 flex-shrink-0 ${color}`}>{menu}</span>
+                      <span className="text-slate-500">{desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Note type="tip">다음 섹션의 <strong>DHCP 예약</strong>은 'LAN 설정' 메뉴, <strong>포트 포워딩</strong>은 '포트 포워딩 / 가상 서버' 메뉴에서 진행합니다.</Note>
             </>
           ),
         },
