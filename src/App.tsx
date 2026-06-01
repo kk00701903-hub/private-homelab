@@ -267,11 +267,63 @@ export default function App() {
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">③ 네트워크·IP 확인</p>
               <CodeBlock label="Proxmox Shell" code={`# 현재 IP 확인 (vmbr0 브리지 IP)\nip addr show vmbr0\n\n# 예상 출력:\n# inet ${pxIP}/${pfx} brd ... scope global vmbr0\n\n# 게이트웨이 확인\nip route | grep default\n# 예: default via ${gw} dev vmbr0\n\n# 인터넷 연결 확인\nping -c 3 8.8.8.8`} />
 
-              <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">④ IP가 다를 경우 — /etc/network/interfaces 수정</p>
-              <Note type="info">설치 시 입력한 IP와 실제 IP가 다르게 잡혔다면 아래 파일을 수정합니다. <strong>vmbr0 브리지</strong> 방식 — Ubuntu의 netplan과 다릅니다.</Note>
+              <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">④ IP가 다를 경우 — 설정 파일 직접 수정하기</p>
+
+              {/* 상황 설명 */}
+              <div className="mb-4 p-3 bg-amber-900/20 rounded-xl border border-amber-500/30 text-sm text-amber-200">
+                <p className="font-semibold mb-1">📌 이런 상황일 때 진행하세요</p>
+                <p className="text-xs text-amber-300/80">설치 때 IP를 입력했는데 <code className="bg-black/30 px-1 rounded">ip addr show vmbr0</code> 결과가 다른 IP로 나오거나, 웹 UI({pxIP}:8006)에 접속이 안 될 때</p>
+              </div>
+
+              {/* nano 설명 */}
+              <div className="mb-3 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-2">🖊 nano란?</p>
+                <p className="text-xs text-slate-300">터미널(콘솔)에서 파일을 열고 수정하는 텍스트 편집기입니다. 마우스 없이 키보드만으로 사용합니다. 파일을 열면 화면에 내용이 표시되고, 방향키로 이동 · 직접 타이핑으로 수정합니다.</p>
+              </div>
+
+              {/* STEP 1: 파일 열기 */}
+              <p className="text-white font-semibold text-sm mb-1">STEP 1 — 파일 열기</p>
+              <p className="text-xs text-slate-400 mb-2">아래 명령어를 입력하면 <code className="bg-slate-700 px-1 rounded text-cyan-400">/etc/network/interfaces</code> 파일이 nano 편집기로 열립니다.</p>
               <CodeBlock label="Proxmox Shell" code={`nano /etc/network/interfaces`} />
-              <CodeBlock label={`/etc/network/interfaces — 올바른 설정 값`} code={`auto lo\niface lo inet loopback\n\niface ens18 inet manual\n\nauto vmbr0\niface vmbr0 inet static\n    address ${pxIP}/${pfx}\n    gateway ${gw}\n    nameserver ${dns}\n    bridge-ports ens18\n    bridge-stp off\n    bridge-fd 0`} />
-              <CodeBlock label="설정 저장 후 적용" code={`# Ctrl+X → Y → Enter 로 저장 후\nsystemctl restart networking\n\n# 변경된 IP 확인\nip addr show vmbr0`} />
+
+              {/* STEP 2: 내용 확인 및 수정 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-1">STEP 2 — 내용 수정</p>
+              <p className="text-xs text-slate-400 mb-2">파일이 열리면 <strong className="text-white">방향키(↑↓←→)</strong>로 커서를 이동해서 잘못된 IP 부분을 찾아 수정합니다. 아래 내용과 똑같이 맞춰주세요.</p>
+              <CodeBlock label="/etc/network/interfaces — 이렇게 되어 있어야 합니다" code={`auto lo\niface lo inet loopback\n\niface ens18 inet manual\n\nauto vmbr0\niface vmbr0 inet static\n    address ${pxIP}/${pfx}\n    gateway ${gw}\n    nameserver ${dns}\n    bridge-ports ens18\n    bridge-stp off\n    bridge-fd 0`} />
+
+              {/* STEP 3: 저장 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">STEP 3 — 저장하고 닫기</p>
+              <div className="space-y-2 mb-3">
+                {[
+                  { key: 'Ctrl + X',  desc: '종료 시도 → "Save modified buffer?" 메시지 표시' },
+                  { key: 'Y',         desc: '"Yes(저장)" 선택' },
+                  { key: 'Enter',     desc: '파일 이름 확인 → 저장 완료 후 nano 종료' },
+                ].map(({ key, desc }) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-slate-700 border border-slate-500 rounded text-xs font-mono text-cyan-300 whitespace-nowrap flex-shrink-0">{key}</kbd>
+                    <span className="text-sm text-slate-300">{desc}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* nano 화면 시뮬레이션 */}
+              <div className="rounded-xl overflow-hidden border border-slate-600 mb-4">
+                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono">nano 화면 하단 — 단축키 안내</div>
+                <div className="bg-black p-3 font-mono text-xs">
+                  <div className="text-slate-300 mb-1">  GNU nano  /etc/network/interfaces</div>
+                  <div className="text-slate-600 border-t border-slate-800 pt-2 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {[['^G', 'Help'], ['^X', 'Exit'], ['^O', 'Write Out'], ['^W', 'Where Is'], ['^K', 'Cut'], ['^U', 'Paste']].map(([k, v]) => (
+                      <span key={k}><span className="text-white">{k}</span> {v}</span>
+                    ))}
+                  </div>
+                  <p className="text-slate-600 text-xs mt-1">* ^ 는 Ctrl 키를 의미합니다</p>
+                </div>
+              </div>
+
+              {/* STEP 4: 적용 */}
+              <p className="text-white font-semibold text-sm mb-1">STEP 4 — 설정 적용</p>
+              <p className="text-xs text-slate-400 mb-2">nano를 닫은 뒤 아래 명령으로 네트워크를 재시작해야 변경 내용이 반영됩니다.</p>
+              <CodeBlock label="Proxmox Shell — 네트워크 재시작 및 IP 확인" code={`systemctl restart networking\n\n# 변경된 IP 확인 (${pxIP} 로 나오면 성공)\nip addr show vmbr0`} />
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">⑤ 웹 관리 UI 접속 확인</p>
               <p className="text-xs text-slate-400 mb-1">IP가 확인되면 <strong>같은 네트워크의 다른 PC</strong> 브라우저에서 접속합니다.</p>
