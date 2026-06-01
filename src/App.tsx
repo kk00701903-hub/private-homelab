@@ -498,10 +498,125 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <p className="text-slate-300 text-sm font-semibold mb-2">설치 완료 후 — SSH 바로 접속</p>
+              {/* SSH 개념 설명 */}
+              <div className="mt-4 mb-4 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-sm font-bold text-white mb-2">🔐 SSH란?</p>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                  <strong className="text-cyan-300">SSH(Secure Shell)</strong>는 네트워크를 통해 다른 컴퓨터에 원격으로 접속해서 명령어를 실행할 수 있는 방법입니다.
+                  쉽게 말하면 <strong className="text-white">NAS VM 앞에 모니터·키보드 없이도, 내 PC 터미널 창에서 NAS VM을 직접 조작</strong>할 수 있게 해줍니다.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                  {[
+                    { label: '내 PC (터미널)', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
+                    { label: '──SSH──▶', color: 'text-slate-500' },
+                    { label: `NAS VM (${nasIP})`, color: 'bg-blue-500/20 text-blue-300 border-blue-500/40' },
+                  ].map((n, i) => n.label.includes('SSH')
+                    ? <span key={i} className={n.color}>{n.label}</span>
+                    : <span key={i} className={`px-2 py-1 rounded-lg border ${n.color}`}>{n.label}</span>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-3">설치 완료 후 — SSH 접속하기</p>
               <Note type="tip">고정 IP로 설치했으므로 VM이 부팅되면 즉시 SSH 접속이 가능합니다. netplan 수정 불필요!</Note>
-              <CodeBlock label="내 PC 터미널 (Windows PowerShell / macOS 터미널)" code={`ssh ubuntu@${nasIP}\n\n# 시스템 업데이트\nsudo apt update && sudo apt upgrade -y`} />
-              <CodeBlock label="VM 콘솔에서 IP 확인 (SSH 전 확인용)" code={`ip addr show ens18\n# 출력: inet ${nasIP}/${pfx} 확인\n\nping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
+
+              {/* 터미널 여는 방법 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">① 내 PC에서 터미널(명령 창) 열기</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {[
+                  {
+                    os: '🪟 Windows',
+                    color: 'border-cyan-500/40 bg-cyan-900/10',
+                    steps: [
+                      '키보드에서 Windows 키 + R 누르기',
+                      '"실행" 창에 powershell 입력 → Enter',
+                      '또는 시작 메뉴 → "PowerShell" 검색 → 실행',
+                    ],
+                  },
+                  {
+                    os: '🍎 macOS',
+                    color: 'border-purple-500/40 bg-purple-900/10',
+                    steps: [
+                      'Command(⌘) + Space → "터미널" 검색 → Enter',
+                      '또는 Finder → 응용 프로그램 → 유틸리티 → 터미널',
+                    ],
+                  },
+                ].map(({ os, color, steps }) => (
+                  <div key={os} className={`p-3 rounded-xl border ${color}`}>
+                    <p className="text-white font-semibold text-xs mb-2">{os}</p>
+                    <ol className="space-y-1">
+                      {steps.map((s, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-400">
+                          <span className="text-slate-600 flex-shrink-0">{i + 1}.</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+
+              {/* SSH 명령어 설명 */}
+              <p className="text-white font-semibold text-sm mb-2">② SSH 접속 명령어 입력</p>
+              <p className="text-xs text-slate-400 mb-2">터미널 창이 열리면 아래 명령어를 그대로 입력하고 Enter를 누릅니다.</p>
+              <CodeBlock label="내 PC 터미널 (PowerShell / macOS 터미널)" code={`ssh ubuntu@${nasIP}`} />
+
+              {/* 명령어 구조 설명 */}
+              <div className="my-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs font-mono">
+                <p className="text-slate-500 mb-2 font-sans">명령어 구조 설명</p>
+                <div className="flex flex-wrap gap-x-1 gap-y-2 items-start">
+                  {[
+                    { word: 'ssh',      color: 'text-amber-300',  desc: 'SSH 접속 명령어' },
+                    { word: 'ubuntu',   color: 'text-cyan-300',   desc: 'NAS VM 로그인 계정명 (Ubuntu 설치 시 생성한 유저)' },
+                    { word: '@',        color: 'text-slate-500',  desc: '' },
+                    { word: nasIP,      color: 'text-emerald-300',desc: 'NAS VM의 IP 주소' },
+                  ].map(({ word, color, desc }, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <span className={`font-bold ${color}`}>{word}</span>
+                      {desc && <span className="text-slate-600 font-sans text-center leading-tight" style={{ fontSize: '10px', maxWidth: '90px' }}>{desc}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 최초 접속 경고 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 최초 접속 시 — 보안 경고 확인</p>
+              <p className="text-xs text-slate-400 mb-2">처음 접속하면 아래 메시지가 뜹니다. <strong className="text-white">yes</strong> 를 입력하고 Enter를 누르세요. (이후엔 다시 묻지 않습니다)</p>
+              <div className="rounded-xl overflow-hidden border border-slate-600 mb-3">
+                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono">터미널 — 최초 접속 경고</div>
+                <pre className="bg-black p-4 text-xs font-mono text-yellow-300 leading-relaxed whitespace-pre-wrap">{`The authenticity of host '${nasIP}' can't be established.
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxx.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? `}<span className="text-white">yes</span></pre>
+              </div>
+
+              {/* 비밀번호 입력 */}
+              <p className="text-white font-semibold text-sm mb-2">④ 비밀번호 입력</p>
+              <div className="rounded-xl overflow-hidden border border-slate-600 mb-3">
+                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono">터미널 — 비밀번호 입력</div>
+                <pre className="bg-black p-4 text-xs font-mono text-green-400 leading-relaxed">{`ubuntu@${nasIP}'s password: `}<span className="text-slate-600">← 입력해도 화면에 아무것도 안 보임 (정상!)</span></pre>
+              </div>
+              <Note type="info">비밀번호를 입력할 때 화면에 아무것도 표시되지 않습니다. 보안상 의도된 동작이니 당황하지 말고 비밀번호를 입력한 후 Enter를 누르세요.</Note>
+
+              {/* 접속 성공 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑤ 접속 성공 화면</p>
+              <div className="rounded-xl overflow-hidden border border-slate-600 mb-3">
+                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono">터미널 — SSH 접속 성공</div>
+                <pre className="bg-black p-4 text-xs font-mono text-green-400 leading-relaxed">{`Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.x-xx-generic x86_64)
+
+Last login: ...
+ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
+              </div>
+              <p className="text-xs text-slate-400 mb-4">이 화면이 나오면 NAS VM에 성공적으로 접속된 것입니다. 이제 이 터미널 창에서 NAS VM에 명령어를 실행할 수 있습니다.</p>
+
+              {/* VM 콘솔에서 IP 확인 */}
+              <p className="text-white font-semibold text-sm mb-2">⑥ (SSH 전) VM 콘솔에서 IP 확인하는 방법</p>
+              <p className="text-xs text-slate-400 mb-2">SSH가 안 된다면 Proxmox 웹 UI → VM 100 선택 → <strong className="text-white">Console</strong> 탭에서 직접 로그인 후 IP를 확인합니다.</p>
+              <CodeBlock label="VM 콘솔 — IP 확인" code={`ip addr show ens18\n# 출력: inet ${nasIP}/${pfx} 확인\n\nping -c 2 ${gw}    # 게이트웨이 응답 확인`} />
+
+              {/* 시스템 업데이트 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑦ 접속 후 — 시스템 업데이트</p>
+              <p className="text-xs text-slate-400 mb-2">SSH 접속에 성공했다면 가장 먼저 시스템을 최신 상태로 업데이트합니다.</p>
+              <CodeBlock label="NAS VM SSH" code={`sudo apt update && sudo apt upgrade -y`} />
             </>
           ),
         },
