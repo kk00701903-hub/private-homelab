@@ -298,6 +298,83 @@ export default function App() {
       id: 2, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
       sections: [
         {
+          title: 'Proxmox 웹 UI 접속하기',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                Proxmox 설치가 완료된 PC와 <strong>같은 네트워크(공유기)</strong>에 연결된 다른 PC 또는 노트북의 브라우저에서 접속합니다.
+              </p>
+
+              {/* 접속 순서 */}
+              <div className="space-y-3 mb-4">
+                {[
+                  { n: '1', title: '브라우저 주소창에 아래 주소 입력 후 Enter', sub: '크롬, 엣지 등 아무 브라우저나 가능' },
+                  { n: '2', title: '"연결이 안전하지 않습니다" 경고 무시', sub: '자체 서명 인증서라 정상 — "고급" 클릭 후 이동' },
+                  { n: '3', title: '로그인 화면에서 계정 입력', sub: 'Username: root  /  Password: 설치 시 설정한 값' },
+                  { n: '4', title: '"유효한 구독 없음" 팝업 → 확인 클릭', sub: '무료 버전이라 뜨는 팝업 — 무시해도 됩니다' },
+                ].map(({ n, title, sub }) => (
+                  <div key={n} className="flex items-start gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700">
+                    <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <CodeBlock label="브라우저 주소창" code={`https://${pxIP}:8006`} />
+
+              {/* 로그인 화면 시뮬레이션 */}
+              <div className="mt-4 rounded-xl overflow-hidden border border-slate-600">
+                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span className="ml-2">Proxmox Virtual Environment — 로그인 화면</span>
+                </div>
+                <div className="bg-slate-950 p-5">
+                  <div className="max-w-xs mx-auto space-y-3">
+                    <p className="text-center text-white font-bold text-sm mb-4">Proxmox Virtual Environment</p>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Username</p>
+                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm font-mono text-cyan-400">root</div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Password</p>
+                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm font-mono text-slate-400">••••••••</div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Realm</p>
+                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-400">Linux PAM standard authentication</div>
+                    </div>
+                    <div className="bg-blue-600 rounded px-3 py-2 text-center text-sm text-white font-semibold">Login</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 로그인 후 화면 설명 */}
+              <div className="mt-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-white mb-3">로그인 후 웹 UI 구조</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  {[
+                    { area: '왼쪽 트리', desc: 'Datacenter → homelab (호스트) → VM 목록', color: 'border-cyan-500/50 text-cyan-300' },
+                    { area: '오른쪽 상단', desc: '\'VM 만들기\' 버튼 — 새 가상머신 생성 시작', color: 'border-emerald-500/50 text-emerald-300' },
+                    { area: '중앙 패널', desc: '선택한 VM·호스트의 상세 설정·콘솔·모니터링', color: 'border-purple-500/50 text-purple-300' },
+                  ].map(({ area, desc, color }) => (
+                    <div key={area} className={`p-3 rounded-lg border bg-slate-900/50 ${color}`}>
+                      <p className={`font-bold mb-1 ${color.split(' ')[1]}`}>{area}</p>
+                      <p className="text-slate-400">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Note type="tip">접속이 안 된다면 — ① Proxmox PC가 켜져 있는지 확인 ② 같은 공유기(네트워크)에 연결됐는지 확인 ③ IP 주소가 맞는지 확인 (<code className="bg-slate-700 px-1 rounded text-cyan-400">ping {pxIP}</code> 명령으로 응답 확인)</Note>
+            </>
+          ),
+        },
+        {
           title: 'VM 생성 설정 (VM ID: 100)',
           body: () => (
             <>
