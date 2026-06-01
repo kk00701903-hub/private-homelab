@@ -346,9 +346,261 @@ export default function App() {
       ],
     },
 
+    /* ══════════════════════════════════════ STEP 2 게이트웨이 & 외부 접속 */
+    {
+      id: 2, title: '게이트웨이 & 외부 접속', subtitle: '공유기 설정 · Tailscale · 포트 포워딩', icon: '🌐', color: 'from-teal-500 to-cyan-600',
+      sections: [
+        {
+          title: '게이트웨이(공유기) 설정 — 왜 필요한가?',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                홈랩의 모든 VM은 공유기(게이트웨이)를 통해 인터넷에 연결됩니다.
+                공유기에서 IP 예약과 외부 접속을 설정해두면 재부팅해도 항상 같은 IP를 유지하고, 집 밖에서도 서버에 접속할 수 있습니다.
+              </p>
+
+              {/* 네트워크 구조 다이어그램 */}
+              <div className="p-4 bg-slate-800/60 rounded-xl border border-teal-500/30 mb-4">
+                <p className="text-xs font-semibold text-teal-300 mb-3">🔌 홈랩 네트워크 구조</p>
+                <div className="flex flex-col gap-2 text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 rounded bg-slate-700 border border-slate-600 text-slate-300">🌍 인터넷</span>
+                    <span className="text-slate-600">──</span>
+                    <span className="px-2 py-1 rounded bg-teal-900/40 border border-teal-500/50 text-teal-300">🔧 공유기 (게이트웨이 {gw})</span>
+                  </div>
+                  <div className="ml-4 pl-4 border-l-2 border-slate-700 flex flex-col gap-1.5">
+                    {[
+                      { icon: '⚙️', label: `Proxmox 호스트`, ip: pxIP },
+                      { icon: '🗄️', label: `VM1 · NAS`,      ip: nasIP },
+                      { icon: '🤖', label: `VM2 · AI`,        ip: aiIP },
+                      { icon: '💻', label: `VM3 · Windows`,   ip: winIP },
+                    ].map(({ icon, label, ip }) => (
+                      <div key={ip} className="flex items-center gap-2">
+                        <span className="text-slate-600">├─</span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">{icon} {label}</span>
+                        <span className="text-cyan-400">{ip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 공유기 접속 */}
+              <p className="text-white font-semibold text-sm mb-2">공유기 관리 페이지 접속</p>
+              <BrowserBar url={`http://${gw}`} className="mb-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3 text-xs">
+                {[
+                  { name: 'ipTIME · ASUS · TP-Link', addr: `http://${gw}` },
+                  { name: 'KT 홈허브',               addr: 'http://192.168.219.1' },
+                  { name: 'SK / LG 공유기',          addr: 'http://192.168.35.1' },
+                ].map(r => (
+                  <div key={r.name} className="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
+                    <p className="text-slate-500 mb-1">{r.name}</p>
+                    <code className="text-cyan-400">{r.addr}</code>
+                  </div>
+                ))}
+              </div>
+              <Note type="tip">공유기 관리자 계정 기본값은 보통 <strong>admin / admin</strong> 또는 공유기 뒷면 스티커에 적혀 있습니다.</Note>
+            </>
+          ),
+        },
+        {
+          title: '공유기 DHCP 예약 — 고정 IP 할당',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                MAC 주소를 기반으로 항상 같은 IP를 할당합니다. Ubuntu 설치 시 Manual IP를 입력했더라도, 공유기에서도 예약해두면 이중으로 안전합니다.
+              </p>
+
+              <div className="space-y-2.5 mb-4">
+                {[
+                  ['1', '공유기 관리 페이지 로그인'],
+                  ['2', '고급 설정 → DHCP 서버 → 정적 IP 할당 (또는 "IP 예약") 메뉴'],
+                  ['3', '각 기기의 MAC 주소 확인 (아래 명령어 참고)'],
+                  ['4', 'MAC 주소 + 할당할 IP 입력 후 저장'],
+                  ['5', '기기 재부팅 → IP 유지 확인'],
+                ].map(([n, t]) => (
+                  <div key={n} className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-teal-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                    <span className="text-sm text-slate-300">{t}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">MAC 주소 확인 명령어</p>
+              <CodeBlock label="Proxmox Shell — 호스트 MAC" code={`ip link show | grep -A1 'vmbr0'\n# link/ether xx:xx:xx:xx:xx:xx`} />
+              <CodeBlock label="각 VM SSH — VM MAC" code={`ip link show ens18\n# link/ether xx:xx:xx:xx:xx:xx`} />
+
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium">기기</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium">예약 IP</th>
+                      <th className="text-left py-2 text-slate-400 font-medium">메모</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {[
+                      { device: '⚙️ Proxmox 호스트', ip: pxIP,  note: 'Proxmox 웹 UI 접속용' },
+                      { device: '🗄️ VM1 · NAS',      ip: nasIP, note: 'CasaOS · Jellyfin · Samba' },
+                      { device: '🤖 VM2 · AI',        ip: aiIP,  note: 'Ollama · Dify' },
+                      { device: '💻 VM3 · Windows',   ip: winIP, note: 'RDP 원격 접속' },
+                    ].map(({ device, ip, note }) => (
+                      <tr key={ip}>
+                        <td className="py-2 pr-3 text-slate-300">{device}</td>
+                        <td className="py-2 pr-3 font-mono text-cyan-400">{ip}</td>
+                        <td className="py-2 text-slate-500">{note}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ),
+        },
+        {
+          title: '방법 1 · Tailscale VPN — 외부 접속 (추천)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                집 밖에서 NAS·AI·Proxmox에 접속하는 가장 쉽고 안전한 방법입니다.
+                공유기 설정 없이 <strong className="text-white">5분 설치</strong>로 어디서든 내부 IP처럼 접속할 수 있습니다.
+              </p>
+
+              {/* 장점 요약 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {[
+                  { icon: '🔒', label: '보안 우수',      desc: '포트 외부 노출 없음' },
+                  { icon: '⚡', label: '5분 설치',       desc: '스크립트 한 줄' },
+                  { icon: '📱', label: '앱 제공',        desc: 'iOS·Android·Windows' },
+                  { icon: '🆓', label: '무료',           desc: '100대 디바이스' },
+                ].map(({ icon, label, desc }) => (
+                  <div key={label} className="p-3 rounded-xl bg-emerald-900/10 border border-emerald-500/30 text-center">
+                    <div className="text-xl mb-1">{icon}</div>
+                    <div className="text-xs font-bold text-emerald-300">{label}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{desc}</div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">① Tailscale 계정 생성</p>
+              <p className="text-xs text-slate-400 mb-2">Google / GitHub / Microsoft 계정으로 바로 가입 가능합니다.</p>
+              <BrowserBar url="https://tailscale.com" className="mb-4" />
+
+              <p className="text-white font-semibold text-sm mb-2">② Proxmox 호스트에 설치 (가장 먼저)</p>
+              <p className="text-xs text-slate-400 mb-2">Proxmox 웹 UI → homelab → Shell 탭에서 실행합니다.</p>
+              <CodeBlock label="Proxmox Shell" code={`curl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up\n# 출력된 URL을 브라우저에서 열어 계정 연결`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 각 VM에도 설치</p>
+              <CodeBlock label="NAS / AI VM SSH" code={`curl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ Tailscale IP 확인</p>
+              <CodeBlock label="각 서버 SSH" code={`tailscale ip -4\n# 출력 예: 100.64.x.x`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑤ Subnet Router — 기존 내부 IP 그대로 사용 (선택)</p>
+              <p className="text-xs text-slate-400 mb-2">Proxmox 호스트에 한 번만 설정하면, 내부 전체 네트워크를 Tailscale로 접근 가능합니다.</p>
+              <CodeBlock label="Proxmox Shell" code={`sudo tailscale up --advertise-routes=${pxIP.split('.').slice(0,3).join('.')}.0/${pfx} --accept-routes\n# Tailscale 관리 콘솔에서 Routes 승인 필요\n# admin.tailscale.com → 해당 기기 → Edit route settings`} />
+
+              <div className="mt-4 p-4 bg-slate-900 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-white mb-2">Subnet Router 설정 후 — 외부에서 내부 IP 그대로 접속</p>
+                <div className="space-y-1.5 text-xs font-mono">
+                  {[
+                    { label: 'Proxmox 웹 UI', url: `https://${pxIP}:8006` },
+                    { label: 'CasaOS',        url: `http://${nasIP}` },
+                    { label: 'Jellyfin',      url: `http://${nasIP}:8096` },
+                    { label: 'Dify AI',       url: `http://${aiIP}` },
+                  ].map(({ label, url }) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <span className="text-slate-500 w-24 flex-shrink-0">{label}</span>
+                      <span className="text-cyan-400">{url}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑥ 스마트폰 / PC에 Tailscale 앱 설치</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { os: '📱 Android', desc: 'Play Store → "Tailscale" 설치' },
+                  { os: '📱 iOS',     desc: 'App Store → "Tailscale" 설치' },
+                  { os: '💻 Windows / Mac', desc: 'tailscale.com/download 에서 설치' },
+                ].map(({ os, desc }) => (
+                  <div key={os} className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-xs">
+                    <p className="text-white font-semibold mb-1">{os}</p>
+                    <p className="text-slate-400">{desc}</p>
+                    <p className="text-slate-600 mt-1">→ 같은 계정으로 로그인</p>
+                  </div>
+                ))}
+              </div>
+              <Note type="tip">모든 기기에 같은 Tailscale 계정으로 로그인하면 자동으로 같은 사설 네트워크로 묶입니다.</Note>
+            </>
+          ),
+        },
+        {
+          title: '방법 2 · 포트 포워딩 — 외부 접속 (대안)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                Tailscale을 사용하기 어렵거나, Jellyfin처럼 특정 서비스를 불특정 다수에게 공개할 때 사용합니다.
+              </p>
+              <Note type="warn">포트를 외부에 직접 개방하므로 반드시 각 서비스에 <strong>강력한 비밀번호</strong>를 설정한 뒤 진행하세요.</Note>
+
+              <div className="my-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">서비스</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">외부 포트</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">내부 IP : 포트</th>
+                      <th className="text-left py-2 text-slate-400 font-medium text-xs">프로토콜</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {[
+                      { svc: '⚙️ Proxmox 웹 UI', ext: '8006', int: `${pxIP}:8006`,  proto: 'TCP', color: 'text-amber-300' },
+                      { svc: '🎬 Jellyfin',       ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300'  },
+                      { svc: '🏠 CasaOS',          ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300'  },
+                      { svc: '🤖 Dify AI',         ext: '3000', int: `${aiIP}:80`,    proto: 'TCP', color: 'text-purple-300'},
+                      { svc: '🔒 SSH (NAS)',        ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300'},
+                    ].map(({ svc, ext, int: intAddr, proto, color }) => (
+                      <tr key={svc}>
+                        <td className={`py-2.5 pr-3 font-medium ${color}`}>{svc}</td>
+                        <td className="py-2.5 pr-3 font-mono text-amber-400 text-xs">{ext}</td>
+                        <td className="py-2.5 pr-3 font-mono text-cyan-400 text-xs">{intAddr}</td>
+                        <td className="py-2.5 text-slate-500 text-xs">{proto}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-2.5 mb-4">
+                {[
+                  ['1', `공유기 관리 페이지 접속: http://${gw}`],
+                  ['2', '고급 설정 → NAT/라우터 관리 → 포트 포워딩 (또는 "가상 서버") 메뉴'],
+                  ['3', '위 표의 각 행을 규칙으로 추가 — 외부 포트 / 내부 IP:포트 / TCP'],
+                  ['4', '저장 후 외부 IP 확인'],
+                ].map(([n, t]) => (
+                  <div key={n} className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                    <span className="text-sm text-slate-300">{t}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">내 외부 IP 확인</p>
+              <CodeBlock label="터미널" code={`curl ifconfig.me`} />
+              <Note type="tip">외부 IP가 자주 바뀐다면 <strong>DuckDNS</strong>(무료 DDNS)를 설정해 고정 도메인으로 접속하세요. duckdns.org에서 5분 만에 설정 가능합니다.</Note>
+            </>
+          ),
+        },
+      ],
+    },
+
     /* ══════════════════════════════════════ STEP 2 NAS */
     {
-      id: 2, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
+      id: 3, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
       sections: [
         {
           title: 'Proxmox 웹 UI 접속하기',
@@ -927,7 +1179,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
     /* ══════════════════════════════════════ STEP 3 AI */
     {
-      id: 3, title: 'VM2 · AI 에이전트', subtitle: 'Ollama + Dify + PostgreSQL + PGVector', icon: '🤖', color: 'from-purple-600 to-violet-700',
+      id: 4, title: 'VM2 · AI 에이전트', subtitle: 'Ollama + Dify + PostgreSQL + PGVector', icon: '🤖', color: 'from-purple-600 to-violet-700',
       sections: [
         {
           title: 'VM 생성 설정 (VM ID: 101)',
@@ -1067,7 +1319,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
     /* ══════════════════════════════════════ STEP 4 Windows */
     {
-      id: 4, title: 'VM3 · Windows 11', subtitle: '개발 & 인터넷 작업용', icon: '💻', color: 'from-cyan-600 to-blue-600',
+      id: 5, title: 'VM3 · Windows 11', subtitle: '개발 & 인터넷 작업용', icon: '💻', color: 'from-cyan-600 to-blue-600',
       sections: [
         {
           title: 'VM 생성 설정 (VM ID: 102)',
@@ -1139,7 +1391,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
     /* ══════════════════════════════════════ STEP 5 야간 절전 */
     {
-      id: 5, title: '야간 절전 모드', subtitle: '23:00 자동 종료 → 08:00 자동 부팅', icon: '🌙', color: 'from-indigo-600 to-slate-700',
+      id: 6, title: '야간 절전 모드', subtitle: '23:00 자동 종료 → 08:00 자동 부팅', icon: '🌙', color: 'from-indigo-600 to-slate-700',
       sections: [
         {
           title: '야간 절전 스케줄 개요',
@@ -1201,7 +1453,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
     /* ══════════════════════════════════════ STEP 6 RAM 업그레이드 */
     {
-      id: 6, title: 'RAM 업그레이드', subtitle: '32GB 장착 후 VM 설정 변경', icon: '⬆️', color: 'from-emerald-500 to-teal-600',
+      id: 7, title: 'RAM 업그레이드', subtitle: '32GB 장착 후 VM 설정 변경', icon: '⬆️', color: 'from-emerald-500 to-teal-600',
       sections: [
         {
           title: '준비 사항',
