@@ -494,6 +494,152 @@ export default function App() {
             </>
           ),
         },
+        {
+          title: 'NAS IP 고정 (공유기 DHCP 예약)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                Ubuntu 설치 시 고정 IP를 입력했더라도, <strong>공유기에서도 MAC 주소로 IP를 예약</strong>해두면 재부팅·DHCP 충돌 걱정 없이 항상 같은 IP를 보장받을 수 있습니다.
+              </p>
+
+              {/* 방법 선택 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {[
+                  { badge: '방법 A · 권장', color: 'border-cyan-500/50 bg-cyan-900/10', badgeColor: 'bg-cyan-500/20 text-cyan-300',
+                    title: '공유기 DHCP 예약', desc: 'MAC 주소로 항상 같은 IP를 할당. netplan 수정 불필요. 공유기에서 한 번만 설정.' },
+                  { badge: '방법 B · 이미 완료', color: 'border-slate-600 bg-slate-800/40', badgeColor: 'bg-slate-700 text-slate-400',
+                    title: 'Ubuntu 설치 시 고정 IP', desc: '설치 마법사에서 Manual IP를 입력한 방법. 이미 완료했다면 방법 A까지 하면 이중으로 안전합니다.' },
+                ].map((m, i) => (
+                  <div key={i} className={`p-4 rounded-xl border ${m.color}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${m.badgeColor}`}>{m.badge}</span>
+                    <p className="text-white font-semibold text-sm mt-2 mb-1">{m.title}</p>
+                    <p className="text-xs text-slate-400">{m.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* STEP A: MAC 주소 확인 */}
+              <p className="text-white font-semibold text-sm mb-2">① NAS VM의 MAC 주소 확인</p>
+              <p className="text-slate-400 text-xs mb-2">Proxmox 웹 UI → VM 100 선택 → <strong>Hardware</strong> 탭 → Network Device 항목에서 확인하거나, SSH로 확인합니다.</p>
+              <CodeBlock label="NAS VM SSH" code={`ip link show ens18\n# 출력 예:\n# ens18: ...\n#     link/ether aa:bb:cc:dd:ee:ff brd ff:ff:ff:ff:ff:ff\n#                ↑ 이 값이 MAC 주소`} />
+
+              {/* STEP B: 공유기 설정 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② 공유기 관리 페이지에서 DHCP 예약 설정</p>
+              <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-3">공유기 종류별 접속 주소</p>
+                <div className="space-y-2">
+                  {[
+                    { name: '대부분의 공유기 (ipTIME, 아수스, TP-Link)', addr: `http://${gw}` },
+                    { name: 'KT 홈허브 / LG 유플러스 공유기',            addr: 'http://192.168.219.1' },
+                    { name: 'SK 브로드밴드 공유기',                       addr: 'http://192.168.35.1' },
+                  ].map((r, i) => (
+                    <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <span className="text-xs text-slate-500 flex-1">{r.name}</span>
+                      <code className="text-xs font-mono text-cyan-400 bg-slate-900 px-2 py-1 rounded">{r.addr}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {[
+                  ['1', '공유기 관리 페이지 접속 (위 주소 입력)'],
+                  ['2', '고급 설정 → DHCP 서버 → 정적 IP 할당 (또는 "IP 예약") 메뉴'],
+                  ['3', 'MAC 주소 입력: 위에서 확인한 NAS VM MAC 주소'],
+                  ['4', `IP 주소 입력: ${nasIP}`],
+                  ['5', '저장 → NAS VM 재부팅 후 IP 확인'],
+                ].map(([n, t]) => (
+                  <div key={n} className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                    <span className="text-sm text-slate-300">{t}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* netplan 수동 설정 */}
+              <p className="text-white font-semibold text-sm mb-2">③ (선택) Ubuntu에서 netplan으로 IP 재확인·수정</p>
+              <Note type="info">설치 시 Manual IP로 입력했다면 아래는 건너뛰어도 됩니다. IP가 잘못 잡혔을 때만 수정합니다.</Note>
+              <CodeBlock label="NAS VM SSH" code={`# 현재 IP 확인\nip addr show ens18\n\n# netplan 설정 파일 편집\nsudo nano /etc/netplan/00-installer-config.yaml`} />
+              <CodeBlock label="/etc/netplan/00-installer-config.yaml" code={`network:\n  version: 2\n  ethernets:\n    ens18:\n      dhcp4: no\n      addresses:\n        - ${nasIP}/${pfx}\n      routes:\n        - to: default\n          via: ${gw}\n      nameservers:\n        addresses: [${dns}]`} />
+              <CodeBlock label="NAS VM SSH — 설정 적용" code="sudo netplan apply" />
+              <Note type="tip">netplan 파일명은 환경마다 다를 수 있습니다. <code className="bg-slate-700 px-1 rounded text-cyan-400">ls /etc/netplan/</code> 로 파일명을 확인하세요.</Note>
+            </>
+          ),
+        },
+        {
+          title: '포트 포워딩 (Port Forwarding) — 외부 접속 설정',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                집 밖(외부 인터넷)에서 Jellyfin · CasaOS 등에 접속하려면 공유기에서 포트 포워딩 설정이 필요합니다.
+                <strong className="text-white"> 내부 네트워크에서만 쓴다면 이 단계는 건너뛰어도 됩니다.</strong>
+              </p>
+
+              <Note type="warn">포트 포워딩은 외부에서 내부 서버로 직접 접근을 허용합니다. 반드시 각 서비스에 <strong>로그인 비밀번호</strong>를 설정한 뒤 진행하세요.</Note>
+
+              {/* 포트 목록 */}
+              <div className="my-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">서비스</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">외부 포트</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium text-xs">내부 IP : 포트</th>
+                      <th className="text-left py-2 text-slate-400 font-medium text-xs">프로토콜</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {[
+                      { svc: '🎬 Jellyfin',      ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300' },
+                      { svc: '🏠 CasaOS',         ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300' },
+                      { svc: '🔒 SSH (NAS)',       ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300' },
+                    ].map(({ svc, ext, int: intAddr, proto, color }) => (
+                      <tr key={svc}>
+                        <td className={`py-2.5 pr-3 font-medium ${color}`}>{svc}</td>
+                        <td className="py-2.5 pr-3 font-mono text-amber-400 text-xs">{ext}</td>
+                        <td className="py-2.5 pr-3 font-mono text-cyan-400 text-xs">{intAddr}</td>
+                        <td className="py-2.5 text-slate-500 text-xs">{proto}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">* SSH 외부 포트를 22가 아닌 2222로 설정하는 이유: 22번은 자동화된 해킹 시도가 많아 다른 포트 사용을 권장합니다.</p>
+
+              {/* 설정 방법 */}
+              <p className="text-white font-semibold text-sm mb-2">공유기 포트 포워딩 설정 방법</p>
+              <div className="space-y-2 mb-4">
+                {[
+                  ['1', `공유기 관리 페이지 접속: http://${gw}`],
+                  ['2', '고급 설정 → NAT/라우터 관리 → 포트 포워딩 (또는 "가상 서버") 메뉴'],
+                  ['3', '규칙 추가 → 외부 포트 / 내부 IP:포트 / 프로토콜 입력'],
+                  ['4', '위 표의 서비스별로 반복 추가 → 저장'],
+                  ['5', '외부 IP 확인 후 테스트'],
+                ].map(([n, t]) => (
+                  <div key={n} className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                    <span className="text-sm text-slate-300">{t}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 외부 IP 확인 */}
+              <p className="text-white font-semibold text-sm mb-2">내 외부 IP 확인</p>
+              <CodeBlock label="NAS VM SSH 또는 내 PC 터미널" code={`curl ifconfig.me\n# 또는 브라우저에서: https://ifconfig.me`} />
+
+              <div className="mt-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-white mb-2">외부에서 접속 테스트</p>
+                <div className="space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center gap-2"><span className="text-slate-500">Jellyfin</span><span className="text-cyan-400">http://[내외부IP]:8096</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500">CasaOS  </span><span className="text-cyan-400">http://[내외부IP]:80</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500">SSH     </span><span className="text-cyan-400">ssh -p 2222 ubuntu@[내외부IP]</span></div>
+                </div>
+              </div>
+
+              <Note type="tip">외부 IP는 통신사에 따라 주기적으로 바뀔 수 있습니다. 고정 도메인이 필요하면 <strong>DDNS(Dynamic DNS)</strong> 서비스(무료: DuckDNS, No-IP)를 함께 설정하세요.</Note>
+            </>
+          ),
+        },
       ],
     },
 
