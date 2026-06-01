@@ -374,37 +374,43 @@ export default function App() {
                       {n === '1' && (
                         <BrowserBar url={`https://${pxIP}:8006`} className="mt-3" />
                       )}
+                      {n === '3' && (
+                        <div className="mt-3 rounded-xl overflow-hidden border border-slate-600">
+                          <div className="bg-slate-700 px-3 py-1.5 text-xs text-slate-400 font-mono flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500" />
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="ml-1 truncate">{`https://${pxIP}:8006`}</span>
+                          </div>
+                          <div className="bg-slate-950 px-4 py-4">
+                            <div className="max-w-xs mx-auto space-y-2.5">
+                              <p className="text-center text-white font-bold text-sm mb-3">Proxmox Virtual Environment</p>
+                              <div>
+                                <p className="text-xs text-slate-500 mb-1">Username</p>
+                                <div className="bg-slate-800 border border-cyan-500/60 rounded px-3 py-2 text-sm font-mono text-cyan-400 flex items-center justify-between">
+                                  <span>root</span>
+                                  <span className="text-xs text-slate-600">← 여기에 입력</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500 mb-1">Password</p>
+                                <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm font-mono text-slate-400 flex items-center justify-between">
+                                  <span>••••••••</span>
+                                  <span className="text-xs text-slate-600">← 설치 시 설정값</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500 mb-1">Realm</p>
+                                <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-xs text-slate-500">Linux PAM standard authentication</div>
+                              </div>
+                              <div className="bg-blue-600 rounded px-3 py-2 text-center text-sm text-white font-semibold">Login</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* 로그인 화면 시뮬레이션 */}
-              <div className="mt-4 rounded-xl overflow-hidden border border-slate-600">
-                <div className="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                  <span className="ml-2">Proxmox Virtual Environment — 로그인 화면</span>
-                </div>
-                <div className="bg-slate-950 p-5">
-                  <div className="max-w-xs mx-auto space-y-3">
-                    <p className="text-center text-white font-bold text-sm mb-4">Proxmox Virtual Environment</p>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Username</p>
-                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm font-mono text-cyan-400">root</div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Password</p>
-                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm font-mono text-slate-400">••••••••</div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Realm</p>
-                      <div className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-400">Linux PAM standard authentication</div>
-                    </div>
-                    <div className="bg-blue-600 rounded px-3 py-2 text-center text-sm text-white font-semibold">Login</div>
-                  </div>
-                </div>
               </div>
 
               {/* 로그인 후 화면 설명 */}
