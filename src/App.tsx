@@ -4,6 +4,7 @@ import Note from '@/components/Note';
 import Checklist from '@/components/Checklist';
 import ResourceBar from '@/components/ResourceBar';
 import NightModeTimeline from '@/components/NightModeTimeline';
+import BrowserBar from '@/components/BrowserBar';
 import { deriveVMIPs } from '@/utils/network';
 
 /* ──────────────────────────────────────────
@@ -327,7 +328,7 @@ export default function App() {
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">⑤ 웹 관리 UI 접속 확인</p>
               <p className="text-xs text-slate-400 mb-1">IP가 확인되면 <strong>같은 네트워크의 다른 PC</strong> 브라우저에서 접속합니다.</p>
-              <CodeBlock label="브라우저 주소창" code={`https://${pxIP}:8006`} />
+              <BrowserBar url={`https://${pxIP}:8006`} />
               <Note type="tip">"연결이 안전하지 않습니다" 경고 → '고급' → '<strong>{pxIP}으로 이동</strong>' 클릭. 자체 서명 인증서라 정상입니다. 사용자명 <code className="bg-slate-700 px-1 rounded text-cyan-400">root</code>, 비밀번호는 설치 시 설정값. "유효한 구독 없음" 팝업 → 확인 클릭 무시.</Note>
             </>
           ),
@@ -367,15 +368,16 @@ export default function App() {
                 ].map(({ n, title, sub }) => (
                   <div key={n} className="flex items-start gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700">
                     <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white">{title}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
+                      {n === '1' && (
+                        <BrowserBar url={`https://${pxIP}:8006`} className="mt-3" />
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-
-              <CodeBlock label="브라우저 주소창" code={`https://${pxIP}:8006`} />
 
               {/* 로그인 화면 시뮬레이션 */}
               <div className="mt-4 rounded-xl overflow-hidden border border-slate-600">
@@ -626,7 +628,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
             <>
               <CodeBlock label="NAS VM SSH" code={`# CasaOS 원클릭 설치 (약 3~5분)\ncurl -fsSL https://get.casaos.io | sudo bash`} />
               <p className="text-slate-300 text-sm my-2">설치 완료 후 브라우저에서 접속:</p>
-              <CodeBlock label="브라우저" code={`http://${nasIP}`} />
+              <BrowserBar url={`http://${nasIP}`} />
               <Note type="tip">CasaOS는 시놀로지 NAS와 비슷한 예쁜 웹 대시보드를 무료로 제공합니다.</Note>
             </>
           ),
@@ -638,7 +640,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               <p className="text-slate-300 text-sm mb-2">영화·사진을 Google TV / 스마트폰에서 스트리밍하는 무료 미디어 서버입니다.</p>
               <CodeBlock label="NAS VM SSH" code={`# Jellyfin 공식 설치\ncurl https://repo.jellyfin.org/install-debuntu.sh | sudo bash\n\n# 서비스 자동 시작 설정\nsudo systemctl enable --now jellyfin`} />
               <p className="text-slate-300 text-sm my-2">설치 후 초기 설정 접속:</p>
-              <CodeBlock label="브라우저" code={`http://${nasIP}:8096`} />
+              <BrowserBar url={`http://${nasIP}:8096`} />
               <div className="mt-3 p-4 bg-blue-900/30 rounded-xl border border-blue-500/40">
                 <p className="text-sm font-semibold text-blue-300 mb-2">📺 Google TV 연결 방법</p>
                 <ol className="text-sm text-slate-400 space-y-1 list-decimal list-inside">
@@ -1012,7 +1014,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               <p className="text-slate-300 text-sm mb-2">마우스 클릭으로 AI 워크플로우·에이전트·RAG를 만드는 오픈소스 플랫폼입니다.</p>
               <CodeBlock label="AI VM SSH" code={`cd ~\ngit clone https://github.com/langgenius/dify.git\ncd dify/docker\ncp .env.example .env\ndocker compose up -d\ndocker compose ps`} />
               <p className="text-slate-300 text-sm my-2">완료 후 브라우저에서 접속:</p>
-              <CodeBlock label="브라우저" code={`http://${aiIP}`} />
+              <BrowserBar url={`http://${aiIP}`} />
               <Note type="tip">최초 접속 시 관리자 계정을 만들면 됩니다.</Note>
             </>
           ),
