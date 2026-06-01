@@ -567,12 +567,121 @@ export default function App() {
           ),
         },
         {
-          title: '포트 포워딩 (Port Forwarding) — 외부 접속 설정',
+          title: '외부 접속 설정 — 방법 비교',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">집 밖에서 NAS 서버에 접속하는 방법은 크게 두 가지입니다. <strong className="text-emerald-400">Tailscale을 강력 추천</strong>합니다.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                {/* 방법 1 */}
+                <div className="p-4 rounded-xl border-2 border-emerald-500/60 bg-emerald-900/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white">방법 1 · 추천</span>
+                  </div>
+                  <p className="text-white font-bold text-sm mb-1">🔒 Tailscale VPN</p>
+                  <ul className="text-xs text-slate-400 space-y-1">
+                    <li className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 공유기 설정 불필요</li>
+                    <li className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 포트를 외부에 열지 않아 보안 우수</li>
+                    <li className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 외부 IP 변경돼도 자동 연결 유지</li>
+                    <li className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 설치 5분 · 무료 (100대 디바이스)</li>
+                    <li className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> iOS·Android·Windows 앱 제공</li>
+                  </ul>
+                </div>
+                {/* 방법 2 */}
+                <div className="p-4 rounded-xl border border-slate-600 bg-slate-800/40">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-600 text-slate-300">방법 2</span>
+                  </div>
+                  <p className="text-white font-bold text-sm mb-1">🌐 포트 포워딩</p>
+                  <ul className="text-xs text-slate-400 space-y-1">
+                    <li className="flex items-center gap-1.5"><span className="text-slate-500">–</span> 공유기에서 포트 직접 개방</li>
+                    <li className="flex items-center gap-1.5"><span className="text-amber-400">!</span> 외부에 포트 노출 → 보안 주의 필요</li>
+                    <li className="flex items-center gap-1.5"><span className="text-amber-400">!</span> 외부 IP 바뀌면 재설정 필요 (DDNS 별도)</li>
+                    <li className="flex items-center gap-1.5"><span className="text-slate-500">–</span> Tailscale 미지원 기기용으로 사용</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+        },
+        {
+          title: '방법 1 · Tailscale VPN 설치 (추천)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                Tailscale은 WireGuard 기반의 메시 VPN입니다. NAS와 내 스마트폰·PC를 같은 사설 네트워크로 묶어주므로,
+                공유기 설정 없이 어디서든 NAS에 내부 IP처럼 접속할 수 있습니다.
+              </p>
+
+              {/* 동작 원리 */}
+              <div className="mb-4 p-4 bg-slate-800/60 rounded-xl border border-emerald-500/30">
+                <p className="text-xs font-semibold text-emerald-300 mb-2">📡 Tailscale 동작 원리</p>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                  {[
+                    { label: '내 스마트폰', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
+                    { label: '→', color: '' },
+                    { label: 'Tailscale 네트워크', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+                    { label: '→', color: '' },
+                    { label: `NAS (${nasIP})`, color: 'bg-blue-500/20 text-blue-300 border-blue-500/40' },
+                  ].map((n, i) => n.label === '→'
+                    ? <span key={i} className="text-slate-600">{n.label}</span>
+                    : <span key={i} className={`px-2 py-1 rounded-lg border ${n.color}`}>{n.label}</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Tailscale이 부여하는 고정 IP(100.x.x.x)로 항상 접속 — 외부 IP·공유기 무관</p>
+              </div>
+
+              {/* STEP 1: NAS에 설치 */}
+              <p className="text-white font-semibold text-sm mb-2">① NAS VM에 Tailscale 설치</p>
+              <CodeBlock label="NAS VM SSH" code={`# Tailscale 공식 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# Tailscale 시작 및 로그인\nsudo tailscale up\n\n# 출력된 URL을 브라우저에서 열어 계정 연결\n# https://login.tailscale.com/a/xxxxxxxx`} />
+
+              <Note type="info">Tailscale 계정이 없으면 <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">tailscale.com</a> 에서 무료 가입합니다. Google · GitHub · Microsoft 계정으로 바로 가입 가능합니다.</Note>
+
+              {/* STEP 2: NAS IP 확인 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② Tailscale IP 확인</p>
+              <CodeBlock label="NAS VM SSH" code={`tailscale ip -4\n# 출력 예: 100.64.x.x  ← 이 IP로 외부에서 접속`} />
+
+              {/* STEP 3: 클라이언트 설치 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 접속할 기기에 Tailscale 앱 설치</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                {[
+                  { os: '📱 Android / iOS', desc: 'Play Store / App Store에서 "Tailscale" 검색 설치 → 같은 계정으로 로그인', color: 'border-blue-500/40' },
+                  { os: '💻 Windows / Mac', desc: 'tailscale.com/download 에서 다운로드 → 같은 계정 로그인', color: 'border-purple-500/40' },
+                  { os: '📺 기타 기기',     desc: 'Tailscale 관리 콘솔(admin.tailscale.com)에서 연결된 기기 확인', color: 'border-slate-600' },
+                ].map(({ os, desc, color }) => (
+                  <div key={os} className={`p-3 rounded-xl border ${color} bg-slate-800/50`}>
+                    <p className="text-white font-semibold text-xs mb-1">{os}</p>
+                    <p className="text-xs text-slate-400">{desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* STEP 4: 접속 테스트 */}
+              <p className="text-white font-semibold text-sm mb-2">④ 외부에서 접속 테스트</p>
+              <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 mb-3">
+                <p className="text-xs text-slate-500 mb-2">Tailscale 연결 후 — 외부 어디서든 아래 주소로 접속</p>
+                <div className="space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://100.x.x.x:8096</span></div>
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://100.x.x.x</span></div>
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh ubuntu@100.x.x.x</span></div>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">* 100.x.x.x = ② 단계에서 확인한 Tailscale IP</p>
+              </div>
+
+              {/* Subnet Router 옵션 */}
+              <p className="text-white font-semibold text-sm mb-2">⑤ (선택) Subnet Router — 내부 IP 그대로 접속</p>
+              <p className="text-slate-400 text-xs mb-2">Tailscale IP 대신 기존 내부 IP({nasIP} 등)로 접속하고 싶다면 서브넷 라우터를 활성화합니다.</p>
+              <CodeBlock label="NAS VM SSH" code={`# 서브넷 라우터 활성화 (예: 10.179.93.0/24 전체 공개)\nsudo tailscale up --advertise-routes=${netConfig.proxmoxIP.split('.').slice(0,3).join('.')}.0/${pfx} --accept-routes\n\n# Tailscale 관리 콘솔에서 Routes 승인 필요\n# admin.tailscale.com → 해당 기기 → Edit route settings → 승인`} />
+              <Note type="tip">서브넷 라우터를 사용하면 Proxmox({pxIP}:8006), NAS({nasIP}), AI({aiIP}) 등 모든 내부 기기를 외부에서 내부 IP 그대로 접속 가능합니다.</Note>
+            </>
+          ),
+        },
+        {
+          title: '방법 2 · 포트 포워딩 (Port Forwarding)',
           body: () => (
             <>
               <p className="text-slate-300 text-sm mb-3">
-                집 밖(외부 인터넷)에서 Jellyfin · CasaOS 등에 접속하려면 공유기에서 포트 포워딩 설정이 필요합니다.
-                <strong className="text-white"> 내부 네트워크에서만 쓴다면 이 단계는 건너뛰어도 됩니다.</strong>
+                Tailscale을 사용하기 어렵거나, 특정 서비스를 불특정 다수에게 공개할 때 사용합니다.
               </p>
 
               <Note type="warn">포트 포워딩은 외부에서 내부 서버로 직접 접근을 허용합니다. 반드시 각 서비스에 <strong>로그인 비밀번호</strong>를 설정한 뒤 진행하세요.</Note>
@@ -590,9 +699,9 @@ export default function App() {
                   </thead>
                   <tbody className="divide-y divide-slate-800">
                     {[
-                      { svc: '🎬 Jellyfin',      ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300' },
-                      { svc: '🏠 CasaOS',         ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300' },
-                      { svc: '🔒 SSH (NAS)',       ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300' },
+                      { svc: '🎬 Jellyfin',  ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300' },
+                      { svc: '🏠 CasaOS',    ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300' },
+                      { svc: '🔒 SSH (NAS)', ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300' },
                     ].map(({ svc, ext, int: intAddr, proto, color }) => (
                       <tr key={svc}>
                         <td className={`py-2.5 pr-3 font-medium ${color}`}>{svc}</td>
@@ -604,9 +713,8 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-slate-500 mb-4">* SSH 외부 포트를 22가 아닌 2222로 설정하는 이유: 22번은 자동화된 해킹 시도가 많아 다른 포트 사용을 권장합니다.</p>
+              <p className="text-xs text-slate-500 mb-4">* SSH 외부 포트를 2222로 지정하는 이유: 22번 포트는 자동화 해킹 시도가 매우 많습니다.</p>
 
-              {/* 설정 방법 */}
               <p className="text-white font-semibold text-sm mb-2">공유기 포트 포워딩 설정 방법</p>
               <div className="space-y-2 mb-4">
                 {[
@@ -623,20 +731,19 @@ export default function App() {
                 ))}
               </div>
 
-              {/* 외부 IP 확인 */}
               <p className="text-white font-semibold text-sm mb-2">내 외부 IP 확인</p>
-              <CodeBlock label="NAS VM SSH 또는 내 PC 터미널" code={`curl ifconfig.me\n# 또는 브라우저에서: https://ifconfig.me`} />
+              <CodeBlock label="NAS VM SSH 또는 내 PC 터미널" code={`curl ifconfig.me\n# 또는 브라우저: https://ifconfig.me`} />
 
               <div className="mt-4 p-4 bg-slate-800/60 rounded-xl border border-slate-700">
                 <p className="text-sm font-semibold text-white mb-2">외부에서 접속 테스트</p>
                 <div className="space-y-1.5 text-xs font-mono">
-                  <div className="flex items-center gap-2"><span className="text-slate-500">Jellyfin</span><span className="text-cyan-400">http://[내외부IP]:8096</span></div>
-                  <div className="flex items-center gap-2"><span className="text-slate-500">CasaOS  </span><span className="text-cyan-400">http://[내외부IP]:80</span></div>
-                  <div className="flex items-center gap-2"><span className="text-slate-500">SSH     </span><span className="text-cyan-400">ssh -p 2222 ubuntu@[내외부IP]</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://[외부IP]:8096</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://[외부IP]:80</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh -p 2222 ubuntu@[외부IP]</span></div>
                 </div>
               </div>
 
-              <Note type="tip">외부 IP는 통신사에 따라 주기적으로 바뀔 수 있습니다. 고정 도메인이 필요하면 <strong>DDNS(Dynamic DNS)</strong> 서비스(무료: DuckDNS, No-IP)를 함께 설정하세요.</Note>
+              <Note type="tip">외부 IP가 자주 바뀐다면 <strong>DDNS</strong> 서비스(무료: DuckDNS, No-IP)를 함께 사용하면 고정 도메인으로 접속할 수 있습니다.</Note>
             </>
           ),
         },
