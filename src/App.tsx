@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageStore } from '@/store/usePageStore';
 import CodeBlock from '@/components/CodeBlock';
 import Note from '@/components/Note';
 import Checklist from '@/components/Checklist';
@@ -27,7 +28,7 @@ export default function App() {
   const dns  = netConfig.dns;
 
   /* ── UI 상태 ── */
-  const [activeStep, setActiveStep] = useState(0);
+  const { activeStep, setActiveStep } = usePageStore();
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0]));
   const [ramPhase, setRamPhase] = useState<'now' | 'after'>('now');
 
