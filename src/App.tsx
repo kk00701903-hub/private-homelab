@@ -477,6 +477,67 @@ export default function App() {
             </>
           ),
         },
+        {
+          title: '🔒 Tailscale 설치 — Proxmox 호스트 (필수)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                Proxmox 본체(호스트)에 Tailscale을 설치하면 집 밖에서도 웹 관리 UI에 안전하게 접속할 수 있습니다.
+                <strong className="text-white"> VM을 만들기 전에 먼저 호스트에 설치</strong>해두는 것이 좋습니다.
+              </p>
+
+              <Note type="warn">무료 저장소 설정(위 단계)이 완료된 후 진행하세요. 저장소가 설정되지 않으면 설치가 실패합니다.</Note>
+
+              {/* 설치 흐름 */}
+              <div className="my-4 p-4 bg-slate-800/60 rounded-xl border border-teal-500/30">
+                <p className="text-xs font-semibold text-teal-300 mb-3">📋 Proxmox Tailscale 설치 흐름</p>
+                <div className="flex flex-col gap-1.5 text-xs">
+                  {[
+                    { n: '1', t: 'Tailscale 공식 스크립트로 설치', c: 'text-white' },
+                    { n: '2', t: 'tailscale up 실행 → 인증 URL 출력', c: 'text-white' },
+                    { n: '3', t: '스마트폰 또는 PC 브라우저에서 인증 URL 열기 → 계정 로그인', c: 'text-white' },
+                    { n: '4', t: '인증 완료 → Tailscale IP (100.x.x.x) 자동 부여', c: 'text-emerald-400' },
+                    { n: '5', t: '외부에서 해당 IP:8006 으로 Proxmox 웹 UI 접속 가능', c: 'text-emerald-400' },
+                  ].map(({ n, t, c }) => (
+                    <div key={n} className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                      <span className={`text-xs ${c}`}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">① 설치 명령어</p>
+              <p className="text-xs text-slate-400 mb-2">Proxmox 웹 UI → homelab → <strong>Shell</strong> 탭에서 실행합니다.</p>
+              <CodeBlock label="Proxmox Shell" code={`# Tailscale 공식 자동 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# 설치 확인\ntailscale version`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② 가동 및 계정 인증</p>
+              <CodeBlock label="Proxmox Shell" code={`sudo tailscale up\n\n# 출력 예:\n# To authenticate, visit:\n# https://login.tailscale.com/a/XXXXXXXXXX  ← 이 URL을 브라우저에서 열기`} />
+              <Note type="easy">출력된 URL을 스마트폰 또는 PC 브라우저에서 열면 카카오·구글·GitHub 계정으로 로그인하는 화면이 나옵니다. 로그인하면 인증 완료!</Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ Tailscale IP 확인</p>
+              <CodeBlock label="Proxmox Shell" code={`tailscale ip -4\n# 출력 예: 100.100.208.66  ← 집 밖에서 이 IP로 Proxmox 접속`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ 재부팅 후 자동 유지 설정</p>
+              <CodeBlock label="Proxmox Shell" code={`# 서비스 자동 시작 등록 (재부팅 후에도 Tailscale 유지)\nsystemctl enable tailscaled\n\n# 상태 확인\nsystemctl status tailscaled | grep Active`} />
+
+              {/* 완료 확인 카드 */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-emerald-900/20 border border-emerald-500/30">
+                  <p className="text-xs font-bold text-emerald-400 mb-1">✓ 집 안 접속 주소</p>
+                  <BrowserBar url={`https://${pxIP}:8006`} />
+                </div>
+                <div className="p-3 rounded-xl bg-purple-900/20 border border-purple-500/30">
+                  <p className="text-xs font-bold text-purple-400 mb-1">✓ 집 밖 접속 주소 (Tailscale)</p>
+                  <p className="text-xs text-slate-400 font-mono">https://[tailscale ip -4 출력값]:8006</p>
+                  <p className="text-xs text-slate-500 mt-1">예: https://100.100.208.66:8006</p>
+                </div>
+              </div>
+
+              <Note type="info">Proxmox 호스트 설치 완료! 이후 <strong>각 VM(NAS, AI 서버)에도 Tailscale을 설치</strong>해야 합니다. VM 설치 후 해당 STEP에서 진행합니다.</Note>
+            </>
+          ),
+        },
       ],
     },
 
@@ -692,11 +753,13 @@ export default function App() {
               <BrowserBar url="https://tailscale.com" className="mb-4" />
 
               <p className="text-white font-semibold text-sm mb-2">② Proxmox 호스트에 설치 (가장 먼저)</p>
-              <p className="text-xs text-slate-400 mb-2">Proxmox 웹 UI → homelab → Shell 탭에서 실행합니다.</p>
-              <CodeBlock label="Proxmox Shell" code={`curl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up\n# 출력된 URL을 브라우저에서 열어 계정 연결`} />
+              <p className="text-xs text-slate-400 mb-2">Proxmox 웹 UI → homelab → Shell 탭에서 실행합니다. (STEP 1 마지막 섹션에서 이미 완료했다면 건너뛰세요.)</p>
+              <CodeBlock label="Proxmox Shell" code={`curl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up\n# 출력된 URL을 브라우저에서 열어 계정 연결\nsystemctl enable tailscaled  # 재부팅 후 자동 유지`} />
 
-              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 각 VM에도 설치</p>
-              <CodeBlock label="NAS / AI VM SSH" code={`curl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up`} />
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 각 VM에도 설치 (NAS · AI 순서로)</p>
+              <p className="text-xs text-slate-400 mb-2">Proxmox에 먼저 설치한 <strong className="text-white">같은 계정</strong>으로 로그인합니다. VM별 상세 내용은 각 STEP을 참고하세요.</p>
+              <CodeBlock label="NAS VM SSH (ares 계정) — STEP 3에서 상세 안내" code={`ssh ares@${nasIP}\ncurl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up\nsystemctl enable tailscaled`} />
+              <CodeBlock label="AI VM SSH — STEP 4에서 상세 안내" code={`ssh ubuntu@${aiIP}\ncurl -fsSL https://tailscale.com/install.sh | sh\nsudo tailscale up\nsystemctl enable tailscaled`} />
 
               <p className="text-white font-semibold text-sm mt-4 mb-2">④ Tailscale IP 확인</p>
               <CodeBlock label="각 서버 SSH" code={`tailscale ip -4\n# 출력 예: 100.64.x.x`} />
@@ -1298,9 +1361,19 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           ),
         },
         {
-          title: '방법 1 · Tailscale VPN 설치 (추천)',
+          title: '🔒 방법 1 · Tailscale VPN 설치 — NAS VM (필수)',
           body: () => (
             <>
+              <div className="mb-4 p-3 rounded-xl bg-teal-900/20 border border-teal-500/40 flex items-start gap-3">
+                <span className="text-xl flex-shrink-0">🔗</span>
+                <div>
+                  <p className="text-teal-300 font-semibold text-sm mb-1">Proxmox 호스트에도 설치했나요?</p>
+                  <p className="text-xs text-slate-400">STEP 1 마지막 섹션에서 <strong className="text-white">Proxmox 호스트에 먼저 Tailscale을 설치</strong>해야 합니다.
+                    완료했다면 같은 방법으로 <strong className="text-white">NAS VM에도 추가 설치</strong>합니다.
+                    모든 기기에 같은 계정으로 로그인하면 하나의 가상 네트워크로 자동으로 묶입니다.</p>
+                </div>
+              </div>
+
               <p className="text-slate-300 text-sm mb-4">
                 Tailscale은 WireGuard 기반의 메시 VPN입니다. NAS와 내 스마트폰·PC를 같은 사설 네트워크로 묶어주므로,
                 공유기 설정 없이 어디서든 NAS에 내부 IP처럼 접속할 수 있습니다.
@@ -1326,7 +1399,8 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
               {/* STEP 1: NAS에 설치 */}
               <p className="text-white font-semibold text-sm mb-2">① NAS VM에 Tailscale 설치</p>
-              <CodeBlock label="NAS VM SSH" code={`# Tailscale 공식 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# Tailscale 시작 및 로그인\nsudo tailscale up\n\n# 출력된 URL을 브라우저에서 열어 계정 연결\n# https://login.tailscale.com/a/xxxxxxxx`} />
+              <p className="text-xs text-slate-400 mb-2">NAS VM에 SSH로 접속한 뒤 아래 명령어를 실행합니다.</p>
+              <CodeBlock label="NAS VM SSH (ares 계정)" code={`# NAS VM SSH 접속\nssh ares@${nasIP}\n\n# Tailscale 공식 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# Tailscale 시작 및 로그인\nsudo tailscale up\n\n# 출력된 URL을 브라우저에서 열어 계정 연결 (Proxmox 때와 동일 계정!)\n# https://login.tailscale.com/a/xxxxxxxx`} />
 
               <Note type="info">Tailscale 계정이 없으면 <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">tailscale.com</a> 에서 무료 가입합니다. Google · GitHub · Microsoft 계정으로 바로 가입 가능합니다.</Note>
 
@@ -1352,13 +1426,13 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               {/* STEP 4: 접속 테스트 */}
               <p className="text-white font-semibold text-sm mb-2">④ 외부에서 접속 테스트</p>
               <div className="p-4 bg-slate-900 rounded-xl border border-slate-700 mb-3">
-                <p className="text-xs text-slate-500 mb-2">Tailscale 연결 후 — 외부 어디서든 아래 주소로 접속</p>
+                <p className="text-xs text-slate-500 mb-2">Tailscale 연결 후 — 집 밖 어디서든 아래 주소로 접속 (100.x.x.x = NAS Tailscale IP)</p>
                 <div className="space-y-1.5 text-xs font-mono">
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://100.x.x.x:8096</span></div>
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://100.x.x.x</span></div>
-                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh ubuntu@100.x.x.x</span></div>
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh ares@100.x.x.x</span></div>
                 </div>
-                <p className="text-xs text-slate-600 mt-2">* 100.x.x.x = ② 단계에서 확인한 Tailscale IP</p>
+                <p className="text-xs text-slate-600 mt-2">* 내부 접속(집 안): ssh ares@{nasIP} / 외부 접속(집 밖): ssh ares@[Tailscale IP]</p>
               </div>
 
               {/* Subnet Router 옵션 */}
