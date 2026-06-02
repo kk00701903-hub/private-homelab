@@ -6,6 +6,8 @@ import Checklist from '@/components/Checklist';
 import ResourceBar from '@/components/ResourceBar';
 import NightModeTimeline from '@/components/NightModeTimeline';
 import BrowserBar from '@/components/BrowserBar';
+import StepSummary from '@/components/StepSummary';
+import WhereBox from '@/components/WhereBox';
 import { deriveVMIPs } from '@/utils/network';
 
 /* ──────────────────────────────────────────
@@ -53,6 +55,17 @@ export default function App() {
           title: '✅ 필요한 준비물 체크리스트',
           body: () => (
             <>
+              <StepSummary
+                goal="설치에 필요한 파일(ISO)을 USB 1개에 담아 준비합니다"
+                time="30분~1시간"
+                difficulty="쉬움"
+                items={[
+                  'USB 32GB 구매 (또는 준비)',
+                  'Ventoy 프로그램으로 USB 포맷',
+                  'ISO 파일 4개 다운로드 후 USB에 복사',
+                ]}
+                result="USB 하나로 4개 OS를 선택해서 부팅할 수 있는 상태"
+              />
               <div className="my-3 p-4 bg-emerald-900/20 rounded-xl border border-emerald-500/40">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🎉</span>
@@ -202,6 +215,18 @@ export default function App() {
           title: 'Proxmox VE란?',
           body: () => (
             <>
+              <StepSummary
+                goal="PC 한 대를 여러 컴퓨터(VM)로 쪼개주는 Proxmox를 설치합니다"
+                time="30분~1시간"
+                difficulty="보통"
+                items={[
+                  'USB로 PC를 부팅해 Proxmox 설치 마법사 실행',
+                  'IP 주소·비밀번호 등 기본 설정 입력',
+                  '설치 완료 후 같은 네트워크 PC 브라우저에서 웹 관리화면 접속',
+                  '무료 업데이트 저장소로 전환',
+                ]}
+                result={`브라우저에서 https://${pxIP}:8006 으로 Proxmox 관리화면에 접속 가능한 상태`}
+              />
               <p className="text-slate-300 text-sm mb-3">PC 전체를 '가상머신 공장'으로 만드는 소프트웨어입니다. 설치 후 웹 브라우저에서 VM을 생성·관리할 수 있습니다.</p>
               <Checklist items={[
                 'USB(Ventoy)를 PC에 꽂고 재부팅 → F11/F12로 USB 부팅 선택',
@@ -355,6 +380,17 @@ export default function App() {
           title: '게이트웨이(공유기) 설정 — 왜 필요한가?',
           body: () => (
             <>
+              <StepSummary
+                goal="공유기(딜라이브)에서 IP 예약과 외부 접속을 설정합니다"
+                time="20~30분"
+                difficulty="보통"
+                items={[
+                  '딜라이브 공유기 관리 페이지 로그인',
+                  '각 VM에 고정 IP 예약 (재부팅해도 IP 유지)',
+                  'Tailscale 설치로 외부 어디서든 홈랩 접속 (추천)',
+                ]}
+                result="집 밖에서도 스마트폰·노트북으로 NAS·AI 서버에 안전하게 접속 가능"
+              />
               <p className="text-slate-300 text-sm mb-4">
                 홈랩의 모든 VM은 공유기(게이트웨이)를 통해 인터넷에 연결됩니다.
                 공유기에서 IP 예약과 외부 접속을 설정해두면 재부팅해도 항상 같은 IP를 유지하고, 집 밖에서도 서버에 접속할 수 있습니다.
@@ -665,6 +701,18 @@ export default function App() {
           title: 'Proxmox 웹 UI 접속하기',
           body: () => (
             <>
+              <StepSummary
+                goal="NAS 서버(VM)를 만들기 위해 Proxmox 관리화면에 접속합니다"
+                time="약 2시간"
+                difficulty="보통"
+                items={[
+                  'Proxmox 웹 관리화면에 로그인',
+                  'VM 만들기로 NAS 가상컴퓨터 생성',
+                  'Ubuntu Linux 설치 (NAS의 운영체제)',
+                  'CasaOS(파일 관리) · Jellyfin(영상 스트리밍) · Samba(윈도우 공유) 설치',
+                ]}
+                result={`브라우저에서 http://${nasIP} 로 NAS 대시보드 접속, 영상 스트리밍 가능`}
+              />
               <p className="text-slate-300 text-sm mb-3">
                 Proxmox 설치가 완료된 PC와 <strong>같은 네트워크(공유기)</strong>에 연결된 다른 PC 또는 노트북의 브라우저에서 접속합니다.
               </p>
@@ -1244,6 +1292,18 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           title: 'VM 생성 설정 (VM ID: 101)',
           body: () => (
             <>
+              <StepSummary
+                goal="내 PC에서 무료로 동작하는 AI 어시스턴트 서버를 만듭니다"
+                time="약 1시간 30분"
+                difficulty="보통"
+                items={[
+                  'AI VM(가상컴퓨터) 생성 후 Ubuntu 설치',
+                  'Docker(프로그램 실행 도구) 설치',
+                  'Ollama 설치 — Gemma2 AI 모델 다운로드',
+                  'Dify 설치 — ChatGPT처럼 쓸 수 있는 웹 인터페이스',
+                ]}
+                result={`브라우저에서 http://${aiIP} 로 나만의 AI 채팅 서버에 접속 가능`}
+              />
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
                   ['VM ID', '101'], ['이름', 'ai-agent'],
@@ -1384,6 +1444,17 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           title: 'VM 생성 설정 (VM ID: 102)',
           body: () => (
             <>
+              <StepSummary
+                goal="Windows 11 가상컴퓨터를 만들어 개발·인터넷 작업용으로 사용합니다"
+                time="약 1시간"
+                difficulty="보통"
+                items={[
+                  'Windows 11 VM 생성 (TPM·UEFI 설정 포함)',
+                  'VirtIO 드라이버 추가 (성능 향상 필수)',
+                  'Windows 11 설치 후 원격 데스크탑(RDP) 활성화',
+                ]}
+                result={`스마트폰·다른 PC에서 ${winIP} 로 Windows 화면을 원격 조작 가능`}
+              />
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
                   ['VM ID', '102'], ['이름', 'windows-work'],
@@ -1456,6 +1527,17 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           title: '야간 절전 스케줄 개요',
           body: () => (
             <>
+              <StepSummary
+                goal="매일 밤 23시에 자동으로 꺼지고 아침 8시에 자동으로 켜지도록 설정합니다"
+                time="20~30분"
+                difficulty="보통"
+                items={[
+                  '바이오스(BIOS)에서 RTC 알람 기능 활성화',
+                  '야간 종료 스크립트 작성 (명령어 복사·붙여넣기)',
+                  'cron으로 매일 23시 자동 실행 등록',
+                ]}
+                result="손대지 않아도 매일 밤 자동으로 절전, 아침에 자동 부팅되어 전기요금 절감"
+              />
               <NightModeTimeline />
               <p className="text-slate-300 text-sm">Proxmox 호스트에 크론(cron) 작업을 등록합니다. 매일 밤 23시에 모든 VM을 안전하게 종료한 뒤, 하드웨어 RTC 알람으로 다음 날 오전 8시에 자동 부팅합니다.</p>
             </>
@@ -1518,6 +1600,18 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           title: '준비 사항',
           body: () => (
             <>
+              <StepSummary
+                goal="RAM을 8GB → 32GB로 교체하고 각 VM의 메모리·CPU 배분을 늘립니다"
+                time="30분 (하드웨어) + 10분 (설정)"
+                difficulty="쉬움"
+                items={[
+                  'PC 전원 완전히 끄기',
+                  '기존 8GB RAM 제거 후 32GB 장착',
+                  'Proxmox 재부팅 후 32GB 인식 확인',
+                  '각 VM에 메모리·CPU 추가 배분 (명령어 복사·붙여넣기)',
+                ]}
+                result="AI VM에 20GB 메모리 확보 → Gemma2 9B(고성능 모델) 동작, Windows와 동시 구동 가능"
+              />
               <Checklist items={[
                 'PC 완전 종료 (Proxmox 웹 UI → 모든 VM 종료 → 호스트 Shutdown)',
                 '전원 케이블 분리 후 케이스 오픈',
@@ -1775,8 +1869,11 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               }`}
             >
               <span>{s.icon}</span>
-              <span className="hidden md:inline">{s.title}</span>
-              <span className="md:hidden text-xs">Step {s.id}</span>
+              <div className="hidden md:block text-left">
+                <div className="leading-tight">{s.title}</div>
+                <div className={`text-xs leading-tight ${activeStep === s.id ? 'text-white/60' : 'text-slate-600'}`}>{s.subtitle}</div>
+              </div>
+              <span className="md:hidden text-xs">{s.id + 1}단계</span>
             </button>
           ))}
         </div>
@@ -1795,14 +1892,19 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
             {step.sections.map((sec, i) => {
               const Body = sec.body;
               const isOpen = openSections.has(i);
+              const isFirst = i === 0;
               return (
-                <div key={i} className="border border-slate-700 rounded-xl overflow-hidden">
+                <div key={i} className={`rounded-xl overflow-hidden border ${isOpen ? 'border-slate-600' : 'border-slate-700/60'}`}>
                   <button
-                    className="w-full flex items-center justify-between px-4 py-3.5 bg-slate-800 hover:bg-slate-800/80 text-left transition-colors"
+                    className={`w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors ${isOpen ? 'bg-slate-700/60' : 'bg-slate-800/80 hover:bg-slate-800'}`}
                     onClick={() => toggleSection(i)}
                   >
-                    <span className="font-semibold text-white text-sm">{sec.title}</span>
-                    <span className={`text-slate-400 text-xs transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isOpen ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                      <span className={`font-semibold text-sm truncate ${isOpen ? 'text-white' : 'text-slate-300'}`}>{sec.title}</span>
+                      {isFirst && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0 hidden sm:inline">여기서 시작</span>}
+                    </div>
+                    <span className={`text-slate-400 text-xs transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
                   {isOpen && (
                     <div className="p-5 bg-slate-900/50">
