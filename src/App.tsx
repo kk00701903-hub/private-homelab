@@ -1444,6 +1444,104 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           ),
         },
         {
+          title: '🚀 Tailscale IP로 내 PC에서 SSH 직접 접속',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                Tailscale 설치가 완료되면 Proxmox 웹 콘솔을 열지 않아도
+                <strong className="text-white"> 내 PC 터미널에서 NAS 서버에 바로 접속</strong>할 수 있습니다.
+                이 방법이 작업 효율이 훨씬 높습니다.
+              </p>
+
+              {/* Tailscale IP 확인 */}
+              <div className="mb-4 p-4 bg-teal-900/20 rounded-xl border border-teal-500/30">
+                <p className="font-semibold text-teal-200 text-sm mb-2">① NAS의 Tailscale IP 확인</p>
+                <p className="text-xs text-slate-400 mb-2">NAS VM SSH 또는 Proxmox Console에서 확인합니다.</p>
+                <CodeBlock label="NAS VM" code={`tailscale ip -4\n# 출력 예: 100.95.120.25  ← 이 IP가 외부 전용 NAS 주소`} />
+                <div className="mt-3 p-3 rounded-lg bg-slate-900/60 border border-slate-700 text-xs text-slate-300">
+                  화면에 보이는 <code className="text-cyan-400 font-mono">100.95.120.25</code> 같은 주소가 바로
+                  <strong className="text-white"> 집 밖 어디서나 NAS에 다이렉트로 접속할 수 있는 NAS 전용 Tailscale IP</strong>입니다.
+                  이 IP는 Proxmox Tailscale IP(100.100.208.66)와 <strong className="text-white">다른 별도 주소</strong>입니다.
+                </div>
+              </div>
+
+              {/* 내 PC에서 SSH */}
+              <p className="font-semibold text-white text-sm mb-3">② 내 PC 터미널에서 SSH 접속</p>
+              <p className="text-xs text-slate-400 mb-2">
+                Windows 검색창에서 <strong className="text-white">PowerShell</strong> 또는 <strong className="text-white">CMD</strong>를 검색해 실행합니다.
+              </p>
+              <CodeBlock label="내 PC — PowerShell / CMD" code={`ssh ares@100.95.120.25\n# 실제 IP는 위에서 확인한 tailscale ip -4 값으로 바꾸세요`} />
+
+              {/* 첫 접속 경고 */}
+              <div className="mt-4 mb-3 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-amber-300 mb-3">⚠️ 첫 접속 시 보안 확인 문구 — 당황하지 마세요!</p>
+                <div className="rounded-lg overflow-hidden border border-slate-600 mb-3">
+                  <div className="bg-slate-900 px-3 py-1.5 text-xs text-slate-400 font-mono">PowerShell 출력 화면</div>
+                  <pre className="bg-black p-3 text-xs font-mono text-yellow-300 leading-relaxed">{`The authenticity of host '100.95.120.25 (100.95.120.25)' can't be established.
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxx.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? _`}</pre>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-500/30">
+                  <span className="text-emerald-400 text-lg flex-shrink-0">✓</span>
+                  <div>
+                    <p className="text-emerald-300 font-semibold text-xs mb-1">해결: <code className="bg-slate-800 px-1 rounded font-mono">yes</code> 입력 후 Enter</p>
+                    <p className="text-xs text-slate-400">처음 접속하는 서버를 신뢰하겠냐는 질문입니다. <code className="text-cyan-400">yes</code>를 입력하면 이후 접속부터는 이 문구가 나오지 않습니다.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 비밀번호 입력 */}
+              <div className="mb-3 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-white mb-3">🔑 비밀번호 입력</p>
+                <div className="rounded-lg overflow-hidden border border-slate-600 mb-3">
+                  <div className="bg-slate-900 px-3 py-1.5 text-xs text-slate-400 font-mono">PowerShell 출력 화면</div>
+                  <pre className="bg-black p-3 text-xs font-mono text-green-400 leading-relaxed">{`ares@100.95.120.25's password: _`}</pre>
+                </div>
+                <Note type="easy">비밀번호를 입력해도 화면에 글자가 보이지 않는 것은 <strong>정상</strong>입니다. 리눅스 보안 기능으로, 입력은 되고 있으니 그대로 타이핑 후 Enter를 누르세요.</Note>
+              </div>
+
+              {/* 성공 화면 */}
+              <div className="mb-4 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-emerald-300 mb-3">✅ 접속 성공 화면</p>
+                <div className="rounded-lg overflow-hidden border border-slate-600">
+                  <div className="bg-slate-900 px-3 py-1.5 text-xs text-slate-400 font-mono">PowerShell — 로그인 완료</div>
+                  <pre className="bg-black p-3 text-xs font-mono text-green-400 leading-relaxed">{`Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.0-xx-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+
+Last login: ...
+
+ares@pve-nas:~$ _`}</pre>
+                </div>
+                <div className="mt-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-500/30 text-xs">
+                  <p className="text-emerald-300 font-semibold mb-1">🎉 <code className="font-mono">ares@pve-nas:~$</code> 프롬프트가 보이면 완벽하게 접속된 것입니다!</p>
+                  <p className="text-slate-400">이제 Proxmox 웹 콘솔은 닫아도 됩니다. 앞으로의 모든 NAS 세팅은 이 PowerShell 창에서 진행합니다.</p>
+                </div>
+              </div>
+
+              {/* 복사 붙여넣기 팁 */}
+              <div className="p-4 bg-blue-900/15 rounded-xl border border-blue-500/30">
+                <p className="font-semibold text-blue-200 text-sm mb-3">💡 작업 효율 200% — 복사·붙여넣기 팁</p>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { os: '💻 Windows PowerShell', copy: 'Ctrl + C', paste: 'Ctrl + V 또는 마우스 우클릭' },
+                    { os: '💻 Windows CMD',        copy: '드래그 후 Enter',  paste: '마우스 우클릭' },
+                    { os: '🍎 macOS 터미널',        copy: 'Cmd + C',  paste: 'Cmd + V' },
+                  ].map(({ os, copy, paste }) => (
+                    <div key={os} className="flex items-center gap-3 py-1.5 border-b border-slate-800/50 last:border-0">
+                      <span className="text-slate-300 w-36 flex-shrink-0">{os}</span>
+                      <span className="text-slate-500">복사: <kbd className="px-1.5 py-0.5 bg-slate-700 border border-slate-500 rounded text-xs font-mono text-cyan-300">{copy}</kbd></span>
+                      <span className="text-slate-500">붙여넣기: <kbd className="px-1.5 py-0.5 bg-slate-700 border border-slate-500 rounded text-xs font-mono text-cyan-300">{paste}</kbd></span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-2">이 가이드의 명령어를 복사해서 PowerShell에 붙여넣기 하면 오타 없이 실행할 수 있습니다.</p>
+              </div>
+            </>
+          ),
+        },
+        {
           title: '방법 2 · 포트 포워딩 (Port Forwarding)',
           body: () => (
             <>
