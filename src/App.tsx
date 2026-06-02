@@ -1976,12 +1976,12 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
             <>
               <p className="text-slate-300 text-sm mb-2">RAM이 20GB로 늘어났으니 풀 사이즈 Gemma2 9B 모델로 교체합니다.</p>
               <CodeBlock label="AI VM SSH" code={`# gemma2 9B 풀 모델 다운로드 (약 5.5GB)\nollama pull gemma2\n\n# 기존 경량 모델 삭제 (선택 사항)\n# ollama rm gemma2:2b\n\n# 모델 목록 확인\nollama list`} />
-              <div className="my-3 p-4 bg-purple-900/30 rounded-xl border border-purple-500/40">
-                <p className="text-sm font-semibold text-purple-300 mb-2">🤖 Dify에서 모델 변경</p>
+                <div className="my-3 p-4 bg-purple-900/30 rounded-xl border border-purple-500/40">
+                <p className="text-sm font-semibold text-purple-300 mb-2">🤖 CrewAI 에이전트 모델 변경</p>
                 <ol className="text-sm text-slate-400 space-y-1 list-decimal list-inside">
-                  <li>Dify 웹 UI → 기존 에이전트 선택 → 편집</li>
-                  <li>모델 드롭다운 → <strong className="text-white">gemma2</strong> (9B) 선택</li>
-                  <li>저장 → 성능 향상 즉시 체감!</li>
+                  <li><code className="text-cyan-400 bg-slate-800 px-1 rounded">~/crewai/.env</code> 파일 열기</li>
+                  <li><code className="text-purple-300">OLLAMA_MODEL=gemma2:2b</code> → <code className="text-emerald-300">OLLAMA_MODEL=gemma2</code> 로 변경</li>
+                  <li>저장 후 에이전트 재실행 → 성능 향상 즉시 체감!</li>
                 </ol>
               </div>
               <Note type="tip">업그레이드 전후 응답 품질 차이가 확연합니다.</Note>
@@ -2008,6 +2008,154 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
                 </div>
               ))}
             </div>
+          ),
+        },
+      ],
+    },
+
+    /* ══════════════════════════════════════ STEP 8 접속 정보 요약 */
+    {
+      id: 8, title: '접속 정보 요약', subtitle: '내 홈랩 주소 · 계정 · SSH 한눈에 보기', icon: '📋', color: 'from-slate-500 to-slate-700',
+      sections: [
+        {
+          title: '내 홈랩 접속 정보 모음',
+          body: () => (
+            <>
+              <StepSummary
+                goal="언제든 빠르게 참고할 수 있는 접속 정보를 한 장으로 정리합니다"
+                time="참고용"
+                difficulty="쉬움"
+                items={[
+                  'Proxmox 웹 GUI 주소 (집 안 / Tailscale)',
+                  'Ubuntu VM 사용자 계정 및 SSH 접속 명령어',
+                  '각 화면별 언제 어떤 정보를 쓰는지 정리',
+                ]}
+                result="어디서든 이 페이지만 열면 모든 접속 정보 즉시 확인"
+              />
+
+              {/* Proxmox 인프라 정보 */}
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">⚙️</span>
+                  <p className="font-semibold text-white text-sm">Proxmox 및 인프라 정보</p>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { label: 'Proxmox 웹 GUI (집 안 내부 IP)', value: `https://${pxIP}:8006`, type: 'url' },
+                    { label: 'Proxmox 웹 GUI (Tailscale 외부 접속)', value: 'https://100.100.208.66:8006', type: 'url' },
+                    { label: '현재 VM ID', value: '100 (ubuntu-server-2404)', type: 'text' },
+                  ].map(({ label, value, type }) => (
+                    <div key={label} className="p-3 bg-slate-800 rounded-xl border border-slate-700">
+                      <div className="text-xs text-slate-500 mb-1">{label}</div>
+                      {type === 'url'
+                        ? <BrowserBar url={value} />
+                        : <div className="font-mono text-cyan-400 text-sm">{value}</div>}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 p-3 rounded-xl bg-blue-900/20 border border-blue-500/30 text-xs text-slate-300">
+                  <span className="text-blue-300 font-semibold">💡 </span>
+                  <code className="text-cyan-400">100.100.208.66</code> 은 Proxmox 호스트 본체가 할당받은 <strong className="text-white">Tailscale IP</strong>입니다.
+                  집 밖에서 접속할 때는 스마트폰·노트북에 Tailscale 앱을 켜고 이 주소를 사용합니다.
+                </div>
+              </div>
+
+              {/* Ubuntu VM 정보 */}
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">🗄️</span>
+                  <p className="font-semibold text-white text-sm">우분투 가상 머신 (VM) 정보</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[
+                    ['사용자 계정 (ID)', 'ares'],
+                    ['호스트 이름 (Hostname)', 'pve-nas'],
+                    ['내부 네트워크 IP (LAN)', '192.168.200.129'],
+                    ['VM 관리 ID', 'VMID 100'],
+                  ].map(([k, v]) => (
+                    <div key={k as string} className="p-3 bg-slate-800 rounded-xl border border-slate-700">
+                      <div className="text-xs text-slate-500 mb-1">{k}</div>
+                      <div className="font-mono text-emerald-400 text-sm">{v}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-white font-semibold text-sm mb-2">SSH 접속 명령어 (PC 터미널)</p>
+                <CodeBlock label="내 PC — Windows PowerShell / macOS 터미널" code={`ssh ares@192.168.200.129`} />
+
+                <div className="mt-3 p-4 bg-amber-900/15 rounded-xl border border-amber-500/30 text-xs text-slate-300 space-y-2">
+                  <p className="text-amber-200 font-semibold">📌 ares 계정이란?</p>
+                  <p>우분투 설치 과정에서 직접 생성한 <strong className="text-white">주 관리용 일반 계정</strong>입니다.</p>
+                  <p>리눅스 보안 권장 사항에 따라 최고 관리자(<code className="text-cyan-400">root</code>)로 직접 로그인하는 대신,
+                    <code className="text-emerald-400 mx-1">ares</code> 계정으로 로그인해서 작업합니다.</p>
+                  <p>시스템 설정이나 패키지 설치 등 관리자 권한이 필요할 때는 명령어 앞에
+                    <code className="text-amber-300 mx-1">sudo</code>를 붙여 안전하게 실행합니다.</p>
+                  <div className="mt-2 p-2 rounded-lg bg-slate-900/60 border border-slate-700 font-mono">
+                    <span className="text-slate-500"># 예시 — 일반 명령</span><br/>
+                    <span className="text-emerald-400">ares@pve-nas:~$</span> <span className="text-white">ls /home</span><br/><br/>
+                    <span className="text-slate-500"># 예시 — 관리자 권한 필요 시</span><br/>
+                    <span className="text-emerald-400">ares@pve-nas:~$</span> <span className="text-amber-300">sudo</span> <span className="text-white">apt update</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 접속 시나리오 요약 */}
+              <div className="mb-2">
+                <p className="font-semibold text-white text-sm mb-3">💡 상황별 접속 방법 요약</p>
+                <div className="space-y-3">
+                  {[
+                    {
+                      situation: 'Proxmox 웹 대시보드 접속',
+                      icon: '⚙️',
+                      color: 'border-orange-500/40 bg-orange-900/10',
+                      badge: 'bg-orange-500/20 text-orange-300',
+                      steps: [
+                        '브라우저 주소창에 https://100.100.208.66:8006 입력 (Tailscale 켜진 상태)',
+                        `또는 같은 Wi-Fi 안에 있을 때: https://${pxIP}:8006`,
+                        '로그인: 사용자명 root / 설치 시 설정한 비밀번호',
+                      ],
+                    },
+                    {
+                      situation: '우분투 서버 내부 설정 (SSH)',
+                      icon: '🗄️',
+                      color: 'border-emerald-500/40 bg-emerald-900/10',
+                      badge: 'bg-emerald-500/20 text-emerald-300',
+                      steps: [
+                        'PC 터미널에서: ssh ares@192.168.200.129',
+                        '로그인: ID → ares / 비밀번호 → 설치 시 설정한 값',
+                        '관리자 작업 시 sudo 붙이기 (예: sudo apt update)',
+                      ],
+                    },
+                    {
+                      situation: '우분투 서버 내부 설정 (Proxmox 콘솔)',
+                      icon: '🖥️',
+                      color: 'border-blue-500/40 bg-blue-900/10',
+                      badge: 'bg-blue-500/20 text-blue-300',
+                      steps: [
+                        'Proxmox 웹 UI → 왼쪽 트리에서 VMID 100 클릭',
+                        '상단 Console 탭 클릭 → 웹 브라우저 안에 터미널 창 열림',
+                        '로그인: ID → ares / 비밀번호 입력',
+                      ],
+                    },
+                  ].map(({ situation, icon, color, badge, steps }) => (
+                    <div key={situation} className={`p-4 rounded-xl border ${color}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">{icon}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge}`}>{situation}</span>
+                      </div>
+                      <ol className="space-y-1.5">
+                        {steps.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                            <span className="w-4 h-4 rounded-full bg-slate-700 text-slate-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           ),
         },
       ],
