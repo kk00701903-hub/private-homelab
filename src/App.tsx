@@ -1542,6 +1542,133 @@ ares@pve-nas:~$ _`}</pre>
           ),
         },
         {
+          title: '🌐 Cockpit — 브라우저로 우분투 관리 (강력 추천)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                검은색 터미널이 불편하다면 <strong className="text-white">Cockpit</strong>을 설치하세요.
+                크롬·엣지 같은 웹 브라우저에서 마우스로 우분투를 관리할 수 있는 무료 오픈소스 웹 콘솔입니다.
+              </p>
+
+              {/* Cockpit vs CLI 비교 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="p-4 rounded-xl border-2 border-emerald-500/60 bg-emerald-900/10">
+                  <p className="text-xs font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white inline-block mb-2">⭐ Cockpit (추천)</p>
+                  <ul className="text-xs text-slate-300 space-y-1">
+                    <li className="flex gap-1.5"><span className="text-emerald-400">✓</span> 브라우저에서 마우스로 조작</li>
+                    <li className="flex gap-1.5"><span className="text-emerald-400">✓</span> CPU·메모리·디스크 실시간 그래프</li>
+                    <li className="flex gap-1.5"><span className="text-emerald-400">✓</span> 서비스 시작·중지 클릭 한 번</li>
+                    <li className="flex gap-1.5"><span className="text-emerald-400">✓</span> 브라우저 내 터미널도 제공</li>
+                    <li className="flex gap-1.5"><span className="text-emerald-400">✓</span> Tailscale IP로 외부에서도 접속</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-xl border border-slate-600 bg-slate-800/40">
+                  <p className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-600 text-slate-300 inline-block mb-2">SSH (기본)</p>
+                  <ul className="text-xs text-slate-400 space-y-1">
+                    <li className="flex gap-1.5"><span className="text-slate-500">–</span> 텍스트 명령어 직접 입력</li>
+                    <li className="flex gap-1.5"><span className="text-slate-500">–</span> 상태 확인 시 명령어 필요</li>
+                    <li className="flex gap-1.5"><span className="text-slate-500">–</span> 숙련자에게 더 빠름</li>
+                    <li className="flex gap-1.5"><span className="text-slate-500">–</span> 추가 설치 불필요</li>
+                  </ul>
+                </div>
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">① Cockpit 설치</p>
+              <p className="text-xs text-slate-400 mb-2">NAS VM SSH 또는 Proxmox Console에서 아래 명령어를 실행합니다.</p>
+              <CodeBlock label="NAS VM SSH" code={`sudo apt update && sudo apt install -y cockpit\n\n# 서비스 시작 및 자동 시작 등록\nsudo systemctl enable --now cockpit.socket\n\n# 상태 확인\nsudo systemctl status cockpit.socket`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② 브라우저에서 접속</p>
+              <p className="text-xs text-slate-400 mb-2">설치 완료 후 웹 브라우저에서 아래 주소로 접속합니다.</p>
+
+              <div className="space-y-2 mb-3">
+                <div className="p-3 rounded-lg bg-emerald-900/20 border border-emerald-500/30">
+                  <p className="text-xs font-bold text-emerald-300 mb-1">🏠 집 안에서 접속</p>
+                  <BrowserBar url={`http://${nasIP}:9090`} />
+                </div>
+                <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                  <p className="text-xs font-bold text-purple-300 mb-1">🌍 집 밖에서 접속 (Tailscale IP)</p>
+                  <BrowserBar url="http://100.95.120.25:9090" />
+                  <p className="text-xs text-slate-500 mt-1">* 실제 NAS Tailscale IP로 교체하세요 (<code className="text-cyan-400">tailscale ip -4</code>)</p>
+                </div>
+              </div>
+
+              <Note type="easy">로그인 창에서 우분투 계정 ID(<code className="text-cyan-400">ares</code>)와 비밀번호를 입력하면 됩니다. Proxmox 비밀번호가 아닌 우분투 설치 시 설정한 비밀번호입니다.</Note>
+
+              {/* Cockpit 화면 미리보기 */}
+              <div className="mt-4 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-xs font-semibold text-slate-400 mb-3">Cockpit 주요 기능</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {[
+                    { icon: '📊', label: '시스템 개요', desc: 'CPU·메모리·디스크 실시간 확인' },
+                    { icon: '📋', label: '로그 (Logs)', desc: '시스템 오류 로그 확인' },
+                    { icon: '💾', label: '스토리지', desc: '디스크 마운트·사용량 관리' },
+                    { icon: '🌐', label: '네트워킹', desc: 'IP·방화벽 설정' },
+                    { icon: '⚙️', label: '서비스', desc: '서비스 시작·중지·재시작' },
+                    { icon: '🖥️', label: '터미널', desc: '브라우저 안에서 SSH 터미널' },
+                  ].map(({ icon, label, desc }) => (
+                    <div key={label} className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700">
+                      <p className="text-white font-semibold mb-0.5">{icon} {label}</p>
+                      <p className="text-slate-500">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ),
+        },
+        {
+          title: '📡 Tailscale 관리 대시보드 — 연결 기기 확인',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                내 Tailscale 망에 연결된 모든 기기(Proxmox, NAS, 스마트폰 등)의 상태를 웹 브라우저에서 확인하고 관리합니다.
+              </p>
+
+              <p className="text-white font-semibold text-sm mb-2">① Tailscale 관리 콘솔 접속</p>
+              <BrowserBar url="https://login.tailscale.com" className="mb-3" />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② Machines 메뉴 확인</p>
+              <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-3">
+                <p className="text-xs text-slate-500 mb-3">admin.tailscale.com → <strong className="text-white">Machines</strong> 탭</p>
+                <div className="space-y-2">
+                  {[
+                    { name: 'homelab (Proxmox)', ip: '100.100.208.66', status: 'Connected', color: 'text-emerald-400' },
+                    { name: 'pve-nas (NAS VM)',   ip: '100.95.120.25',  status: 'Connected', color: 'text-emerald-400' },
+                    { name: '내 PC / 스마트폰',    ip: '100.x.x.x',     status: 'Connected', color: 'text-cyan-400' },
+                  ].map(({ name, ip, status, color }) => (
+                    <div key={name} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 text-xs font-mono">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === 'Connected' ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                      <span className="text-white w-44 flex-shrink-0">{name}</span>
+                      <span className={color}>{ip}</span>
+                      <span className={`ml-auto ${color}`}>{status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Note type="info">
+                <strong>pve-nas</strong>가 목록에 나타나고 <span className="text-emerald-400 font-semibold">Connected</span> 상태이면 NAS Tailscale 설치 완료입니다.
+                기기가 보이지 않으면 NAS VM에서 <code>sudo tailscale up</code>을 다시 실행하세요.
+              </Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">Tailscale 관리 콘솔에서 할 수 있는 것</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ['🔒 키 만료 비활성화', '기기 선택 → Disable key expiry (재인증 불필요)'],
+                  ['🛡️ 접근 제어 (ACL)', '어떤 기기가 어떤 기기에 접속할 수 있는지 설정'],
+                  ['🌐 Subnet Router 승인', 'Proxmox Routes 승인 → 내부 IP로 외부 접속'],
+                  ['📱 기기 삭제·이름 변경', '분실·교체 기기 관리'],
+                ].map(([k, v]) => (
+                  <div key={k as string} className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-xs">
+                    <p className="text-white font-semibold mb-1">{k}</p>
+                    <p className="text-slate-500">{v}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ),
+        },
+        {
           title: '방법 2 · 포트 포워딩 (Port Forwarding)',
           body: () => (
             <>
