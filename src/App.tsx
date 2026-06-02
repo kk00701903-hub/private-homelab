@@ -16,10 +16,10 @@ import { deriveVMIPs } from '@/utils/network';
 export default function App() {
   /* ── 네트워크 설정 상태 ── */
   const [netConfig, setNetConfig] = useState({
-    proxmoxIP: '10.179.93.200',
+    proxmoxIP: '192.168.200.200',
     prefix:    '24',
-    gateway:   '10.179.93.62',
-    dns:       '10.179.93.62',
+    gateway:   '192.168.200.1',
+    dns:       '192.168.200.1',
   });
 
   /* ── 파생 변수 ── */
@@ -296,6 +296,27 @@ export default function App() {
 
               <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">④ IP 재설정 — 원하는 IP로 바꾸기</p>
 
+              {/* 1부 — 내 PC에서 공유기 IP 대역 먼저 확인 */}
+              <div className="mb-5 p-4 bg-blue-900/20 rounded-xl border border-blue-500/30">
+                <p className="font-semibold text-blue-200 text-sm mb-3">🔍 1부 — 내 PC에서 공유기 IP 대역 먼저 확인</p>
+                <p className="text-xs text-slate-300 mb-3">Proxmox에 어떤 IP를 줘야 할지 모를 때, 내 PC에서 공유기 주소(게이트웨이)를 먼저 확인합니다.</p>
+                <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-700 mb-3">
+                  <p className="text-xs font-semibold text-slate-400 mb-1">💻 내 PC — Windows 명령 프롬프트(cmd)에서 실행</p>
+                  <pre className="text-xs font-mono text-green-400">ipconfig</pre>
+                </div>
+                <div className="text-xs text-slate-300 mb-2">출력 결과에서 <strong className="text-white">기본 게이트웨이 (Default Gateway)</strong> 항목을 찾습니다:</div>
+                <div className="p-3 rounded-lg bg-black/60 border border-slate-700 font-mono text-xs mb-3">
+                  <div className="text-slate-500">이더넷 어댑터 이더넷:</div>
+                  <div className="text-slate-400 pl-2">IPv4 주소 . . : <span className="text-cyan-400">192.168.200.xxx</span></div>
+                  <div className="text-slate-400 pl-2">서브넷 마스크 : <span className="text-slate-400">255.255.255.0</span></div>
+                  <div className="text-slate-400 pl-2">기본 게이트웨이 : <span className="text-amber-400">{gw}</span> ← 이 값이 공유기 주소!</div>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-900/20 border border-emerald-500/30 text-xs text-emerald-200">
+                  <strong>결론:</strong> 게이트웨이가 <code className="bg-slate-800 px-1 rounded text-amber-300">{gw}</code> 라면, 공유기 대역은 <code className="bg-slate-800 px-1 rounded text-cyan-300">192.168.200.xxx</code> 입니다.<br/>
+                  Proxmox IP는 이 대역의 비어있는 번호(예: <code className="bg-slate-800 px-1 rounded text-cyan-300">{pxIP}</code>)로 고정합니다.
+                </div>
+              </div>
+
               {/* 언제 필요한가 */}
               <div className="mb-4 p-4 bg-amber-900/20 rounded-xl border border-amber-500/30">
                 <p className="font-semibold text-amber-200 text-sm mb-2">📌 이런 상황일 때 진행하세요</p>
@@ -396,7 +417,30 @@ export default function App() {
                 </div>
               </div>
 
-              <p className="text-slate-300 text-sm font-semibold mt-3 mb-2">⑤ 웹 관리 UI 접속 확인</p>
+              {/* 3부 — 네트워크 연결 검증 */}
+              <div className="mt-5 p-4 bg-cyan-900/15 rounded-xl border border-cyan-500/30">
+                <p className="font-semibold text-cyan-200 text-sm mb-3">📡 3부 — 네트워크 연결 상태 크로스 체크</p>
+                <p className="text-xs text-slate-400 mb-3">IP를 바꾼 뒤 실제로 인터넷과 포트가 열렸는지 두 가지로 확인합니다.</p>
+
+                <p className="text-white font-semibold text-xs mb-1">① Proxmox에서 인터넷 연결 확인 (ping)</p>
+                <CodeBlock label="Proxmox Shell" code={`ping -c 4 8.8.8.8\n# 4 packets transmitted, 4 received, 0% packet loss → 성공!`} />
+
+                <p className="text-white font-semibold text-xs mt-3 mb-1">② 내 PC에서 Proxmox 웹 UI 포트 확인 (PowerShell)</p>
+                <CodeBlock label="내 PC — PowerShell" code={`Test-NetConnection ${pxIP} -Port 8006\n# TcpTestSucceeded : True → 성공!`} />
+
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-3 rounded-lg bg-emerald-900/20 border border-emerald-500/30">
+                    <p className="font-bold text-emerald-400 mb-1">ping 성공 조건</p>
+                    <p className="text-slate-400"><code className="text-cyan-400">0% packet loss</code> 또는 모든 패킷 수신</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-900/20 border border-emerald-500/30">
+                    <p className="font-bold text-emerald-400 mb-1">포트 성공 조건</p>
+                    <p className="text-slate-400"><code className="text-cyan-400">TcpTestSucceeded : True</code> 표시</p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-slate-300 text-sm font-semibold mt-4 mb-2">⑤ 웹 관리 UI 접속 확인</p>
               <p className="text-xs text-slate-400 mb-1">IP가 확인되면 <strong>같은 네트워크의 다른 PC</strong> 브라우저에서 접속합니다.</p>
               <BrowserBar url={`https://${pxIP}:8006`} />
               <Note type="tip">"연결이 안전하지 않습니다" 경고 → '고급' → '<strong>{pxIP}으로 이동</strong>' 클릭. 자체 서명 인증서라 정상입니다. 사용자명 <code className="bg-slate-700 px-1 rounded text-cyan-400">root</code>, 비밀번호는 설치 시 설정값. "유효한 구독 없음" 팝업 → 확인 클릭 무시.</Note>
@@ -404,12 +448,32 @@ export default function App() {
           ),
         },
         {
-          title: '무료 업데이트 저장소 설정',
+          title: '🛑 무료 버전 저장소 설정 (필수)',
           body: () => (
             <>
-              <p className="text-slate-300 text-sm mb-2">Proxmox 웹 UI → 왼쪽 트리에서 <strong>homelab</strong> 클릭 → <strong>Shell</strong> 탭 → 아래 명령 실행</p>
-              <CodeBlock label="Proxmox Shell" code={`# 유료 저장소 비활성화\nsed -i 's/^deb/# deb/' /etc/apt/sources.list.d/pve-enterprise.list\nsed -i 's/^deb/# deb/' /etc/apt/sources.list.d/ceph.list\n\n# 무료 저장소 추가\necho "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \\\n  >> /etc/apt/sources.list\n\n# 패키지 업데이트\napt update && apt upgrade -y`} />
-              <Note type="tip">이 작업을 해야 이후 apt upgrade가 오류 없이 작동합니다. 최초 1회만 실행하면 됩니다.</Note>
+              <p className="text-slate-300 text-sm mb-3">
+                Proxmox 무료 버전은 기본적으로 <strong>유료 엔터프라이즈 저장소</strong>가 활성화되어 있어
+                <code className="bg-slate-800 px-1 rounded text-red-400 text-xs mx-1">apt-get update</code> 실행 시 인증 에러가 발생합니다.
+                이 단계에서 지뢰를 제거합니다.
+              </p>
+
+              <Note type="warn">이 단계를 건너뛰면 이후 모든 <code>apt</code> 명령이 유료 구독 오류로 실패합니다. <strong>Proxmox 설치 직후 반드시 실행하세요.</strong></Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">방법 A — 빠른 방법 (추천)</p>
+              <p className="text-xs text-slate-400 mb-2">유료 저장소 설정 파일을 통째로 삭제한 후 패키지 목록을 갱신합니다.</p>
+              <CodeBlock label="Proxmox Shell" code={`# 유료 구독 저장소 설정 파일 전체 삭제\nrm -f /etc/apt/sources.list.d/*\n\n# 패키지 목록 갱신 (에러 없이 완료되면 성공!)\napt-get update`} />
+
+              <div className="mt-3 p-3 rounded-xl bg-black/50 border border-slate-700 font-mono text-xs">
+                <p className="text-slate-500 mb-1">성공 시 출력 화면:</p>
+                <p className="text-green-400">Reading package lists... Done</p>
+                <p className="text-slate-500">Building dependency tree... Done</p>
+                <p className="text-slate-500">All packages are up to date.</p>
+              </div>
+
+              <p className="text-white font-semibold text-sm mt-5 mb-2">방법 B — 무료 저장소도 추가하기 (선택)</p>
+              <p className="text-xs text-slate-400 mb-2">Proxmox 공식 무료 저장소를 추가하면 이후 패키지 업그레이드도 가능합니다.</p>
+              <CodeBlock label="Proxmox Shell" code={`# 유료 저장소 주석 처리\nsed -i 's/^deb/# deb/' /etc/apt/sources.list.d/pve-enterprise.list 2>/dev/null || true\nsed -i 's/^deb/# deb/' /etc/apt/sources.list.d/ceph.list 2>/dev/null || true\n\n# 무료 저장소 추가\necho "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \\\n  >> /etc/apt/sources.list\n\n# 업데이트 및 업그레이드\napt update && apt upgrade -y`} />
+              <Note type="tip">최초 1회만 실행하면 됩니다. 이후 정기적인 업데이트는 <code>apt update && apt upgrade -y</code>만 입력하면 됩니다.</Note>
             </>
           ),
         },
@@ -673,6 +737,57 @@ export default function App() {
                 ))}
               </div>
               <Note type="tip">모든 기기에 같은 Tailscale 계정으로 로그인하면 자동으로 같은 사설 네트워크로 묶입니다.</Note>
+
+              {/* 최종 접속 대시보드 */}
+              <div className="mt-5 p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-teal-500/40">
+                <p className="font-semibold text-teal-200 text-sm mb-1">🎯 Tailscale 설치 완료 — 최종 접속 주소 확인</p>
+                <p className="text-xs text-slate-400 mb-3">설치 후 아래 명령어로 Tailscale IP를 확인합니다.</p>
+                <CodeBlock label="Proxmox Shell" code={`tailscale ip -4\n# 출력 예: 100.100.208.66`} />
+                <p className="text-xs text-slate-400 mb-3 mt-3">확인된 IP로 아래 두 주소가 생성됩니다:</p>
+                <div className="space-y-2">
+                  <div className="p-3 rounded-lg bg-emerald-900/20 border border-emerald-500/30">
+                    <p className="text-xs font-bold text-emerald-300 mb-1">🏠 집 안에서 접속</p>
+                    <BrowserBar url={`https://${pxIP}:8006`} />
+                  </div>
+                  <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                    <p className="text-xs font-bold text-purple-300 mb-1">🌍 집 밖에서 접속 (Tailscale 앱 활성화 필요)</p>
+                    <BrowserBar url="https://100.100.208.66:8006" />
+                    <p className="text-xs text-slate-500 mt-1">* 위 IP는 예시입니다. 실제 <code className="text-cyan-400">tailscale ip -4</code> 출력값을 사용하세요.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 트러블슈팅 */}
+              <div className="mt-5 p-4 bg-amber-900/15 rounded-xl border border-amber-500/30">
+                <p className="font-semibold text-amber-200 text-sm mb-3">🔧 Tailscale 설치 시 자주 발생하는 오류</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-2 pr-3 text-slate-400 font-medium">오류 증상</th>
+                        <th className="text-left py-2 pr-3 text-slate-400 font-medium">원인</th>
+                        <th className="text-left py-2 text-slate-400 font-medium">해결 명령어</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {[
+                        { symptom: 'ip_forwarding 경고 메시지', cause: '라우팅 비활성화', fix: 'sysctl -w net.ipv4.ip_forward=1' },
+                        { symptom: 'Subnet routes 미인식', cause: 'Tailscale 콘솔 승인 필요', fix: 'admin.tailscale.com → Routes 승인' },
+                        { symptom: '기기가 오프라인으로 표시', cause: 'tailscaled 서비스 미실행', fix: 'systemctl restart tailscaled' },
+                        { symptom: '재부팅 후 연결 끊김', cause: '서비스 자동시작 미등록', fix: 'systemctl enable tailscaled' },
+                        { symptom: '인증 만료 / 재연결 불가', cause: '세션 만료', fix: 'tailscale up --reset' },
+                      ].map(({ symptom, cause, fix }) => (
+                        <tr key={symptom}>
+                          <td className="py-2 pr-3 text-amber-300">{symptom}</td>
+                          <td className="py-2 pr-3 text-slate-400">{cause}</td>
+                          <td className="py-2 font-mono text-cyan-400 text-xs">{fix}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Note type="info">VM2 AI 에이전트 설정 완료 후, <strong>Tailscale 오류 점검 에이전트</strong>가 위 진단을 자동으로 수행하고 카카오톡으로 결과를 알려줍니다.</Note>
+              </div>
             </>
           ),
         },
@@ -1330,23 +1445,25 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
 
     /* ══════════════════════════════════════ STEP 3 AI */
     {
-      id: 4, title: 'VM2 · AI 에이전트', subtitle: 'Ollama + Dify + PostgreSQL + PGVector', icon: '🤖', color: 'from-purple-600 to-violet-700',
+      id: 4, title: 'VM2 · AI 에이전트', subtitle: 'Ollama + CrewAI + KakaoTalk 자동화', icon: '🤖', color: 'from-purple-600 to-violet-700',
       sections: [
         {
           title: 'VM 생성 설정 (VM ID: 101)',
           body: () => (
             <>
               <StepSummary
-                goal="내 PC에서 무료로 동작하는 AI 어시스턴트 서버를 만듭니다"
-                time="약 1시간 30분"
-                difficulty="보통"
+                goal="로컬 AI 엔진(Ollama)과 CrewAI 에이전트로 자동화 시스템을 구축합니다"
+                time="약 2시간"
+                difficulty="보통~어려움"
                 items={[
                   'AI VM(가상컴퓨터) 생성 후 Ubuntu 설치',
-                  'Docker(프로그램 실행 도구) 설치',
-                  'Ollama 설치 — Gemma2 AI 모델 다운로드',
-                  'Dify 설치 — ChatGPT처럼 쓸 수 있는 웹 인터페이스',
+                  'Docker + Ollama 설치 — 로컬 LLM 엔진 구동',
+                  'CrewAI 설치 — Python 기반 에이전트 프레임워크',
+                  '모닝브리핑 에이전트 — 매일 07:00 카카오톡 자동 발송',
+                  '문서 정리 에이전트 — NAS 파일 자동 분류',
+                  'Tailscale 오류 점검 에이전트 — Proxmox 자동 진단',
                 ]}
-                result={`브라우저에서 http://${aiIP} 로 나만의 AI 채팅 서버에 접속 가능`}
+                result="매일 아침 카카오톡으로 브리핑을 받고, NAS 문서가 자동으로 정리됩니다"
               />
               <div className="grid grid-cols-2 gap-2 my-3">
                 {[
@@ -1361,7 +1478,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
                   </div>
                 ))}
               </div>
-              <Note type="info">Gemma2 9B 모델은 약 6~8GB RAM을 사용합니다. 20GB를 배분하면 Ollama + Dify + PostgreSQL 동시 구동이 충분합니다.</Note>
+              <Note type="info">Gemma2 9B 모델은 약 6~8GB RAM을 사용합니다. 20GB를 배분하면 Ollama + CrewAI 에이전트 동시 구동이 충분합니다.</Note>
             </>
           ),
         },
@@ -1429,51 +1546,225 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           ),
         },
         {
-          title: 'Dify 설치 (AI 에이전트 빌더)',
+          title: 'CrewAI 설치 및 환경 구성',
           body: () => (
             <>
-              <p className="text-slate-300 text-sm mb-2">마우스 클릭으로 AI 워크플로우·에이전트·RAG를 만드는 오픈소스 플랫폼입니다.</p>
-              <CodeBlock label="AI VM SSH" code={`cd ~\ngit clone https://github.com/langgenius/dify.git\ncd dify/docker\ncp .env.example .env\ndocker compose up -d\ndocker compose ps`} />
-              <p className="text-slate-300 text-sm my-2">완료 후 브라우저에서 접속:</p>
-              <BrowserBar url={`http://${aiIP}`} />
-              <Note type="tip">최초 접속 시 관리자 계정을 만들면 됩니다.</Note>
+              <p className="text-slate-300 text-sm mb-3">
+                CrewAI는 여러 AI 에이전트가 역할을 나눠 협력하는 Python 프레임워크입니다.
+                각 에이전트(Agent)에게 역할·목표·도구를 부여하고, 태스크(Task)를 순서대로 실행합니다.
+              </p>
+
+              {/* 구조 다이어그램 */}
+              <div className="p-4 bg-slate-800/60 rounded-xl border border-purple-500/30 mb-4">
+                <p className="text-xs font-semibold text-purple-300 mb-3">🤖 CrewAI 구조</p>
+                <div className="flex flex-col gap-2 text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 rounded bg-purple-900/40 border border-purple-500/50 text-purple-300">Crew (팀)</span>
+                    <span className="text-slate-600">→ 에이전트 + 태스크 묶음</span>
+                  </div>
+                  <div className="ml-4 pl-4 border-l-2 border-slate-700 flex flex-col gap-1.5">
+                    {[
+                      { icon: '👨‍💼', label: 'Agent (역할)', desc: 'researcher · writer · sender ...' },
+                      { icon: '📋', label: 'Task (작업)',  desc: '검색하기 · 요약하기 · 발송하기 ...' },
+                      { icon: '🔧', label: 'Tool (도구)',  desc: '웹검색 · 파일읽기 · HTTP 요청 ...' },
+                      { icon: '🧠', label: 'LLM (두뇌)',   desc: `Ollama (gemma2:2b) @ ${aiIP}:11434` },
+                    ].map(({ icon, label, desc }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span className="text-slate-600">├─</span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">{icon} {label}</span>
+                        <span className="text-slate-500">{desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">① Python 3.11 및 가상환경 설치</p>
+              <CodeBlock label="AI VM SSH" code={`sudo apt install -y python3.11 python3-pip python3.11-venv\n\n# Python 버전 확인\npython3.11 --version`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② CrewAI 프로젝트 디렉토리 및 가상환경 생성</p>
+              <CodeBlock label="AI VM SSH" code={`mkdir ~/crewai && cd ~/crewai\npython3.11 -m venv .venv\nsource .venv/bin/activate\n\n# 프롬프트가 (.venv) 로 바뀌면 성공\n(.venv) ubuntu@ai-agent:~/crewai$`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ CrewAI 및 필수 패키지 설치</p>
+              <CodeBlock label="AI VM SSH (.venv 활성화 상태)" code={`pip install crewai crewai-tools paramiko requests\n\n# 설치 확인\npython3 -c "import crewai; print(crewai.__version__)"`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ Ollama LLM 연동 테스트</p>
+              <CodeBlock label="AI VM SSH (.venv 활성화 상태)" code={`python3 << 'EOF'\nfrom crewai import LLM\nllm = LLM(\n    model="ollama/gemma2:2b",\n    base_url="http://localhost:11434"\n)\nresponse = llm.call("안녕하세요! 간단히 자기소개 해주세요.")\nprint(response)\nEOF`} />
+
+              <div className="mt-3 p-3 rounded-xl bg-emerald-900/20 border border-emerald-500/30 text-xs">
+                <p className="text-emerald-300 font-semibold mb-1">✓ 성공 기준</p>
+                <p className="text-slate-400">Gemma2 모델의 한국어 응답이 터미널에 출력되면 Ollama ↔ CrewAI 연동 완료입니다.</p>
+              </div>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑤ 환경 변수 파일 생성</p>
+              <CodeBlock label="AI VM SSH" code={`cat > ~/crewai/.env << 'EOF'\n# Ollama 설정\nOLLAMA_BASE_URL=http://localhost:11434\nOLLAMA_MODEL=gemma2:2b\n\n# 카카오 API (다음 섹션에서 발급)\nKAKAO_ACCESS_TOKEN=여기에_입력\n\n# Proxmox SSH 접속 (Tailscale 오류 점검용)\nPROXMOX_HOST=${pxIP}\nPROXMOX_USER=root\nPROXMOX_PASSWORD=여기에_입력\nEOF`} />
+              <Note type="tip">`.env` 파일에는 비밀번호·API 키가 들어가므로 <code>chmod 600 ~/crewai/.env</code> 로 권한을 제한하세요.</Note>
             </>
           ),
         },
         {
-          title: 'Gemma2 + Claude Code API 하이브리드 구성',
+          title: '📬 모닝브리핑 에이전트 — 카카오톡 자동 발송',
           body: () => (
             <>
-              <p className="text-slate-300 text-sm mb-3">Dify 웹 UI → 우측 상단 프로필 → <strong>설정 → 모델 공급자</strong>에서 두 모델을 모두 등록합니다.</p>
-              <div className="space-y-3 mb-4">
-                <div className="p-4 bg-purple-900/30 rounded-xl border border-purple-500/40">
-                  <div className="font-semibold text-purple-300 mb-2">🟣 Gemma2:2b — 무료 로컬 (8GB) / Gemma2 9B (32GB 후)</div>
-                  <p className="text-sm text-slate-400 mb-1">모델 공급자 → <strong>Ollama</strong> 추가</p>
-                  <CodeBlock label="Ollama 서버 주소" code={`http://${aiIP}:11434`} />
-                  <p className="text-xs text-slate-500">모델명: <code className="text-purple-300 bg-slate-800 px-1 rounded">gemma2:2b</code> (현재) → 32GB 업그레이드 후 <code className="text-purple-300 bg-slate-800 px-1 rounded">gemma2</code></p>
+              <p className="text-slate-300 text-sm mb-4">
+                매일 오전 7시, CrewAI 에이전트가 뉴스·날씨를 수집하고 요약해서 카카오톡 <strong>나에게 보내기</strong>로 자동 전송합니다.
+              </p>
+
+              {/* 카카오 API 설정 */}
+              <div className="mb-5 p-4 bg-yellow-900/20 rounded-xl border border-yellow-500/30">
+                <p className="font-semibold text-yellow-200 text-sm mb-3">① 카카오 REST API 키 발급</p>
+                <div className="space-y-3 text-xs text-slate-300">
+                  {[
+                    ['1', 'developers.kakao.com 접속 → 카카오 계정 로그인'],
+                    ['2', '내 애플리케이션 → 애플리케이션 추가하기'],
+                    ['3', '앱 이름: homelab-briefing / 사업자명: 개인'],
+                    ['4', '앱 설정 → 플랫폼 → Web → 사이트 도메인: http://localhost 추가'],
+                    ['5', '앱 키 탭에서 REST API 키 복사 → .env 파일의 KAKAO_ACCESS_TOKEN 에 임시 저장'],
+                    ['6', '제품 설정 → 카카오 로그인 → 활성화 ON → Redirect URI: http://localhost'],
+                    ['7', '동의항목 → 카카오톡 메시지 전송 → 필수 동의로 설정'],
+                  ].map(([n, t]) => (
+                    <div key={n} className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-yellow-500 text-slate-900 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{n}</span>
+                      <span>{t}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="p-4 bg-cyan-900/30 rounded-xl border border-cyan-500/40">
-                  <div className="font-semibold text-cyan-300 mb-2">🔵 Claude Code API — 코딩·복잡 작업용 (소량 과금)</div>
-                  <p className="text-sm text-slate-400 mb-1">모델 공급자 → <strong>Anthropic</strong> → API Key 입력</p>
-                  <CodeBlock label="Claude API 키 발급 주소" code="https://console.anthropic.com/settings/keys" />
+                <BrowserBar url="https://developers.kakao.com" className="mt-3" />
+              </div>
+
+              {/* Access Token 발급 */}
+              <div className="mb-5 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="font-semibold text-white text-sm mb-2">② Access Token 발급 (최초 1회)</p>
+                <p className="text-xs text-slate-400 mb-3">REST API 키만으로는 메시지를 보낼 수 없습니다. 사용자 인증을 통해 Access Token을 받아야 합니다.</p>
+                <CodeBlock label="AI VM SSH" code={`# 카카오 인증 URL 생성\npython3 << 'EOF'\nimport os\nfrom dotenv import load_dotenv\nload_dotenv('/root/crewai/.env')\n\nREST_API_KEY = os.getenv('KAKAO_ACCESS_TOKEN')\nREDIRECT_URI = 'http://localhost'\n\nauth_url = f"https://kauth.kakao.com/oauth/authorize?client_id={REST_API_KEY}&redirect_uri={REDIRECT_URI}&response_type=code"\nprint("아래 URL을 브라우저에서 열어 로그인 후 code 값을 복사하세요:")\nprint(auth_url)\nEOF`} />
+                <Note type="info">브라우저에서 위 URL 접속 → 카카오 로그인 → 리디렉션된 URL의 <code>?code=</code> 뒷값을 복사합니다.</Note>
+                <CodeBlock label="AI VM SSH — code 값으로 Access Token 발급" code={`python3 << 'EOF'\nimport requests, os\nfrom dotenv import load_dotenv\nload_dotenv('/root/crewai/.env')\n\nREST_API_KEY = os.getenv('KAKAO_ACCESS_TOKEN')\nCODE = input("복사한 code 값을 입력하세요: ")\n\nres = requests.post(\n    "https://kauth.kakao.com/oauth/token",\n    data={\n        "grant_type": "authorization_code",\n        "client_id": REST_API_KEY,\n        "redirect_uri": "http://localhost",\n        "code": CODE,\n    }\n)\ndata = res.json()\nprint("\\nAccess Token:", data.get('access_token'))\nprint("Refresh Token:", data.get('refresh_token'))\nEOF\n\n# 출력된 Access Token을 .env 파일의 KAKAO_ACCESS_TOKEN 값으로 업데이트`} />
+              </div>
+
+              {/* morning_brief.py */}
+              <p className="text-white font-semibold text-sm mb-2">③ 모닝브리핑 에이전트 스크립트 작성</p>
+              <CodeBlock label="AI VM SSH — ~/crewai/morning_brief.py 생성" code={`cat > ~/crewai/morning_brief.py << 'PYEOF'\nimport os, requests\nfrom datetime import date\nfrom dotenv import load_dotenv\nfrom crewai import Agent, Task, Crew, LLM\n\nload_dotenv('/root/crewai/.env')\n\nllm = LLM(\n    model=f"ollama/{os.getenv('OLLAMA_MODEL', 'gemma2:2b')}",\n    base_url=os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')\n)\n\n# ── 에이전트 정의 ──\nresearcher = Agent(\n    role="뉴스·날씨 리서처",\n    goal="오늘의 주요 뉴스와 서울 날씨를 수집합니다",\n    backstory="정보를 빠르게 수집하는 AI 리서처입니다",\n    llm=llm, verbose=False\n)\n\nwriter = Agent(\n    role="브리핑 작성자",\n    goal="수집된 정보를 간결한 아침 브리핑으로 작성합니다",\n    backstory="핵심만 짧게 전달하는 브리핑 전문가입니다",\n    llm=llm, verbose=False\n)\n\n# ── 태스크 정의 ──\nresearch_task = Task(\n    description=f"오늘({date.today()}) 날씨(서울)와 주요 뉴스 3가지를 한국어로 조사하세요.",\n    expected_output="날씨 정보와 뉴스 3가지 요약 (각 1-2문장)",\n    agent=researcher\n)\n\nwrite_task = Task(\n    description="조사된 내용을 카카오톡에 보낼 아침 브리핑 메시지로 작성하세요. 이모지를 활용하고 3-5줄로 간결하게 작성하세요.",\n    expected_output="카카오톡 발송용 아침 브리핑 메시지",\n    agent=writer,\n    context=[research_task]\n)\n\n# ── 실행 ──\ncrew = Crew(agents=[researcher, writer], tasks=[research_task, write_task], verbose=False)\nresult = crew.kickoff()\n\n# ── 카카오톡 나에게 보내기 ──\ntoken = os.getenv('KAKAO_ACCESS_TOKEN')\nresponse = requests.post(\n    "https://kapi.kakao.com/v2/api/talk/memo/default/send",\n    headers={"Authorization": f"Bearer {token}"},\n    data={\n        "template_object": '{"object_type":"text","text":"' + str(result).replace('"', '\\\\"') + '","link":{"web_url":"https://kakao.com"}}'\n    }\n)\nif response.status_code == 200:\n    print("✓ 카카오톡 발송 성공")\nelse:\n    print(f"✗ 발송 실패: {response.text}")\nPYEOF`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ 테스트 실행</p>
+              <CodeBlock label="AI VM SSH" code={`cd ~/crewai && source .venv/bin/activate\npython3 morning_brief.py\n# ✓ 카카오톡 발송 성공 → 카카오톡에서 확인`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑤ cron으로 매일 07:00 자동 실행</p>
+              <CodeBlock label="AI VM SSH" code={`# crontab 편집\ncrontab -e\n\n# 아래 줄 추가 (파일 저장 후 종료)\n0 7 * * * cd /root/crewai && /root/crewai/.venv/bin/python3 morning_brief.py >> /root/crewai/morning.log 2>&1`} />
+              <CodeBlock label="AI VM SSH — 등록 확인" code={`crontab -l\n# 0 7 * * * ... 줄이 보이면 성공`} />
+              <Note type="tip">로그 확인: <code>tail -f ~/crewai/morning.log</code> 로 실행 기록을 실시간으로 확인할 수 있습니다.</Note>
+            </>
+          ),
+        },
+        {
+          title: '📁 문서 정리 에이전트 — NAS 파일 자동 분류',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                NAS Samba 공유 폴더를 마운트해서, 파일 이름·확장자·날짜를 분석하고 적절한 폴더로 자동 이동합니다.
+                매주 1회 실행되며 분류 결과를 카카오톡으로 보고합니다.
+              </p>
+
+              <p className="text-white font-semibold text-sm mb-2">① NAS Samba 폴더 마운트</p>
+              <CodeBlock label="AI VM SSH" code={`# cifs-utils 설치\nsudo apt install -y cifs-utils\n\n# 마운트 포인트 생성\nsudo mkdir -p /mnt/nas\n\n# Samba 마운트 (NAS IP와 공유 폴더명 맞춰서 수정)\nsudo mount -t cifs //${nasIP}/shared /mnt/nas \\\n  -o username=ubuntu,password=비밀번호,uid=1000,gid=1000\n\n# 마운트 확인\nls /mnt/nas`} />
+              <Note type="info">재부팅 후에도 자동 마운트하려면 <code>/etc/fstab</code>에 등록하거나, 에이전트 실행 전 <code>mount</code> 명령을 스크립트에 포함하세요.</Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② 분류 규칙 정의</p>
+              <div className="overflow-x-auto mt-2 mb-4">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium">확장자 / 키워드</th>
+                      <th className="text-left py-2 pr-3 text-slate-400 font-medium">분류 폴더</th>
+                      <th className="text-left py-2 text-slate-400 font-medium">예시</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {[
+                      { ext: '.pdf, .docx, .xlsx', folder: '문서/', ex: '계약서.pdf → 문서/' },
+                      { ext: '.jpg, .png, .mp4',   folder: '미디어/', ex: '사진.jpg → 미디어/' },
+                      { ext: '이름에 날짜 포함',     folder: '날짜별/', ex: '2025-06-01_회의.txt → 날짜별/' },
+                      { ext: '이름에 프로젝트 키워드', folder: '프로젝트/', ex: 'homelab_설정.txt → 프로젝트/' },
+                      { ext: '기타',                 folder: '기타/',   ex: 'abc.xyz → 기타/' },
+                    ].map(({ ext, folder, ex }) => (
+                      <tr key={folder}>
+                        <td className="py-2 pr-3 text-purple-300 font-mono">{ext}</td>
+                        <td className="py-2 pr-3 text-cyan-400">{folder}</td>
+                        <td className="py-2 text-slate-500">{ex}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-white font-semibold text-sm mb-2">③ 문서 정리 에이전트 스크립트</p>
+              <CodeBlock label="AI VM SSH — ~/crewai/doc_organizer.py 생성" code={`cat > ~/crewai/doc_organizer.py << 'PYEOF'\nimport os, shutil, requests\nfrom pathlib import Path\nfrom datetime import datetime\nfrom dotenv import load_dotenv\nfrom crewai import Agent, Task, Crew, LLM\n\nload_dotenv('/root/crewai/.env')\n\nNAS_PATH = Path("/mnt/nas")\nllm = LLM(\n    model=f"ollama/{os.getenv('OLLAMA_MODEL', 'gemma2:2b')}",\n    base_url=os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')\n)\n\n# 파일 분석 도구\ndef analyze_and_move(directory: str) -> str:\n    results = []\n    rules = [\n        (['.pdf', '.docx', '.xlsx', '.pptx', '.hwp'], '문서'),\n        (['.jpg', '.jpeg', '.png', '.gif', '.webp'], '이미지'),\n        (['.mp4', '.avi', '.mkv', '.mov'], '동영상'),\n        (['.mp3', '.wav', '.flac'], '음악'),\n        (['.zip', '.tar', '.gz', '.rar'], '압축'),\n    ]\n    src = Path(directory)\n    for f in src.iterdir():\n        if f.is_file():\n            moved = False\n            for exts, folder in rules:\n                if f.suffix.lower() in exts:\n                    dest = src / folder\n                    dest.mkdir(exist_ok=True)\n                    shutil.move(str(f), str(dest / f.name))\n                    results.append(f"✓ {f.name} → {folder}/")\n                    moved = True\n                    break\n            if not moved and f.suffix:\n                dest = src / '기타'\n                dest.mkdir(exist_ok=True)\n                shutil.move(str(f), str(dest / f.name))\n                results.append(f"• {f.name} → 기타/")\n    return "\\n".join(results) if results else "정리할 파일 없음"\n\n# ── 에이전트 실행 ──\nreport_text = analyze_and_move(str(NAS_PATH))\nsummary = f"[문서 정리 완료 - {datetime.now().strftime('%Y-%m-%d')}]\\n{report_text[:500]}"\n\n# 카카오톡 보고\ntoken = os.getenv('KAKAO_ACCESS_TOKEN')\nrequests.post(\n    "https://kapi.kakao.com/v2/api/talk/memo/default/send",\n    headers={"Authorization": f"Bearer {token}"},\n    data={\n        "template_object": '{"object_type":"text","text":"' + summary.replace('"', '\\\\"') + '","link":{"web_url":"https://kakao.com"}}'\n    }\n)\nprint(summary)\nPYEOF`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ 매주 일요일 02:00 자동 실행 등록</p>
+              <CodeBlock label="AI VM SSH" code={`crontab -e\n\n# 아래 줄 추가\n0 2 * * 0 cd /root/crewai && /root/crewai/.venv/bin/python3 doc_organizer.py >> /root/crewai/docorg.log 2>&1`} />
+            </>
+          ),
+        },
+        {
+          title: '🔍 Tailscale 오류 점검 에이전트 — Proxmox 자동 진단',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-4">
+                Proxmox에 Tailscale을 설치한 후 문제가 생기면, AI 에이전트가 SSH로 접속해서 로그를 분석하고
+                오류 원인과 해결 명령어를 카카오톡으로 전송합니다.
+              </p>
+
+              {/* 동작 흐름 */}
+              <div className="p-4 bg-slate-800/60 rounded-xl border border-cyan-500/30 mb-4">
+                <p className="text-xs font-semibold text-cyan-300 mb-3">🔄 동작 흐름</p>
+                <div className="flex flex-col gap-1.5 text-xs font-mono">
+                  {[
+                    { step: '1', text: 'AI VM → SSH → Proxmox 접속 (paramiko)', color: 'text-purple-300' },
+                    { step: '2', text: 'tailscale status / journalctl 로그 수집', color: 'text-cyan-300' },
+                    { step: '3', text: 'CrewAI analyzer가 로그 분석 → 오류 원인 파악', color: 'text-emerald-300' },
+                    { step: '4', text: '해결 명령어 포함한 리포트 생성', color: 'text-amber-300' },
+                    { step: '5', text: '카카오톡 나에게 보내기로 결과 전송', color: 'text-yellow-300' },
+                  ].map(({ step, text, color }) => (
+                    <div key={step} className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-slate-700 border border-slate-500 text-white text-xs flex items-center justify-center flex-shrink-0">{step}</span>
+                      <span className={color}>{text}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <p className="text-white font-semibold text-sm mb-2">⚡ 하이브리드 라우팅 전략</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                {[
-                  { icon: '🟣', title: 'Gemma2 (로컬·무료)',  badge: 'bg-purple-500/20 text-purple-300', tasks: ['일상 대화·한국어 Q&A', '단순 요약·번역', '파일 분류·태깅', '반복 자동화 작업'] },
-                  { icon: '🔵', title: 'Claude Code (API)',  badge: 'bg-cyan-500/20 text-cyan-300',    tasks: ['코드 생성·디버깅', '복잡한 로직 분석', '긴 문서·논문 처리', '정밀 답변이 필요한 작업'] },
-                ].map((m, i) => (
-                  <div key={i} className="p-4 bg-slate-800 rounded-xl border border-slate-700">
-                    <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full mb-3 ${m.badge}`}>{m.icon} {m.title}</div>
-                    <ul className="text-xs text-slate-400 space-y-1">
-                      {m.tasks.map((t, j) => <li key={j} className="flex items-center gap-1.5"><span className="text-slate-600">•</span>{t}</li>)}
-                    </ul>
-                  </div>
-                ))}
+
+              <p className="text-white font-semibold text-sm mb-2">① Tailscale 오류 점검 스크립트 작성</p>
+              <CodeBlock label="AI VM SSH — ~/crewai/ts_checker.py 생성" code={`cat > ~/crewai/ts_checker.py << 'PYEOF'\nimport os, requests, paramiko\nfrom dotenv import load_dotenv\nfrom crewai import Agent, Task, Crew, LLM\n\nload_dotenv('/root/crewai/.env')\n\nllm = LLM(\n    model=f"ollama/{os.getenv('OLLAMA_MODEL', 'gemma2:2b')}",\n    base_url=os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')\n)\n\ndef ssh_run(host, user, password, cmd) -> str:\n    """SSH로 명령어 실행 후 결과 반환"""\n    try:\n        client = paramiko.SSHClient()\n        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())\n        client.connect(host, username=user, password=password, timeout=10)\n        _, stdout, stderr = client.exec_command(cmd)\n        result = stdout.read().decode() + stderr.read().decode()\n        client.close()\n        return result\n    except Exception as e:\n        return f"SSH 연결 실패: {e}"\n\n# ── Proxmox에서 로그 수집 ──\nPX_HOST = os.getenv('PROXMOX_HOST')\nPX_USER = os.getenv('PROXMOX_USER')\nPX_PASS = os.getenv('PROXMOX_PASSWORD')\n\nts_status = ssh_run(PX_HOST, PX_USER, PX_PASS, "tailscale status 2>&1 | head -20")\nts_log = ssh_run(PX_HOST, PX_USER, PX_PASS, "journalctl -u tailscaled -n 30 --no-pager 2>&1")\nts_service = ssh_run(PX_HOST, PX_USER, PX_PASS, "systemctl is-active tailscaled")\n\ncollected_info = f"""\n[tailscale status]\\n{ts_status}\n[tailscaled 서비스 상태]\\n{ts_service}\n[최근 로그]\\n{ts_log}\n"""\n\n# ── CrewAI 분석 ──\nanalyzer = Agent(\n    role="Tailscale 장애 분석가",\n    goal="Tailscale 로그를 분석해 오류 원인과 해결책을 제시합니다",\n    backstory="Linux 네트워킹과 VPN 전문가입니다",\n    llm=llm, verbose=False\n)\n\nanalysis_task = Task(\n    description=f"아래 Tailscale 진단 정보를 분석해 오류 원인과 해결 명령어를 한국어로 간결하게 작성하세요:\\n{collected_info}",\n    expected_output="문제 없음 또는 [오류 원인] + [해결 명령어] 형식의 한국어 리포트",\n    agent=analyzer\n)\n\ncrew = Crew(agents=[analyzer], tasks=[analysis_task], verbose=False)\nresult = crew.kickoff()\n\nreport = f"[Tailscale 점검 결과]\\n{result}"\nprint(report)\n\n# 카카오톡 발송\ntoken = os.getenv('KAKAO_ACCESS_TOKEN')\nrequests.post(\n    "https://kapi.kakao.com/v2/api/talk/memo/default/send",\n    headers={"Authorization": f"Bearer {token}"},\n    data={\n        "template_object": '{"object_type":"text","text":"' + report[:500].replace('"', '\\\\"') + '","link":{"web_url":"https://kakao.com"}}'\n    }\n)\nPYEOF`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② 수동 실행 (Tailscale 문제 발생 시)</p>
+              <CodeBlock label="AI VM SSH" code={`cd ~/crewai && source .venv/bin/activate\npython3 ts_checker.py\n# 결과가 카카오톡과 터미널에 동시 출력됩니다`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 매일 자동 점검 등록 (선택)</p>
+              <CodeBlock label="AI VM SSH" code={`crontab -e\n\n# 매일 06:50 (모닝브리핑 전) 자동 점검\n50 6 * * * cd /root/crewai && /root/crewai/.venv/bin/python3 ts_checker.py >> /root/crewai/ts_check.log 2>&1`} />
+
+              {/* 자주 발생하는 오류와 자동 해결 */}
+              <div className="mt-4 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-sm font-semibold text-white mb-3">에이전트가 감지하는 주요 오류 패턴</p>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { log: 'ip_forwarding not enabled', fix: 'sysctl -w net.ipv4.ip_forward=1 && echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf' },
+                    { log: 'failed to bring interface up', fix: 'systemctl restart tailscaled && tailscale up' },
+                    { log: 'Login expired', fix: 'tailscale up --reset' },
+                    { log: 'inactive (dead)', fix: 'systemctl enable --now tailscaled' },
+                    { log: 'subnet router not approved', fix: 'admin.tailscale.com → 해당 기기 → Edit route settings 승인' },
+                  ].map(({ log, fix }) => (
+                    <div key={log} className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-red-400 font-mono">로그: {log}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 text-xs">→ 해결: </span>
+                        <code className="text-cyan-400 text-xs">{fix}</code>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Note type="tip">가장 빠른 방법: 에이전트 앱 2개를 별도로 만드세요. ①일반용 에이전트(Gemma2) ②코딩용 에이전트(Claude Code)</Note>
-              <Note type="info">Claude API는 사용한 토큰 수만큼만 과금됩니다. 코딩 작업 위주라면 월 $5~10 수준으로 충분히 사용 가능합니다.</Note>
+              <Note type="easy">처음에는 수동 실행으로 테스트하고, 정상 동작 확인 후 cron에 등록하는 것이 좋습니다.</Note>
             </>
           ),
         },
