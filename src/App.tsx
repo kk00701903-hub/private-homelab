@@ -1923,14 +1923,28 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
         </div>
 
         {/* ── Step Content ── */}
-        <div className="bg-slate-900/70 rounded-2xl border border-slate-700 overflow-hidden mb-8">
+        <div id="print-area" className="bg-slate-900/70 rounded-2xl border border-slate-700 overflow-hidden mb-8">
           <div className={`p-5 bg-gradient-to-r ${step.color} flex items-center gap-3`}>
             <span className="text-3xl">{step.icon}</span>
             <div className="flex-1">
               <div className="text-white font-black text-lg leading-tight">{step.title}</div>
               <div className="text-white/65 text-sm">{step.subtitle}</div>
             </div>
-            <div className="text-white/40 text-sm font-mono">{activeStep + 1} / {STEPS.length}</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  // 모든 섹션 펼치기 후 출력
+                  setOpenSections(new Set(step.sections.map((_, i) => i)));
+                  setTimeout(() => window.print(), 300);
+                }}
+                className="no-print flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition-all border border-white/20 backdrop-blur-sm"
+                title="현재 단계 내용을 PDF로 저장"
+              >
+                <span>🖨️</span>
+                <span className="hidden sm:inline">PDF 출력</span>
+              </button>
+              <div className="text-white/40 text-sm font-mono">{activeStep + 1} / {STEPS.length}</div>
+            </div>
           </div>
           <div className="p-4 md:p-6 space-y-2">
             {step.sections.map((sec, i) => {
@@ -1940,7 +1954,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               return (
                 <div key={i} className={`rounded-xl overflow-hidden border ${isOpen ? 'border-slate-600' : 'border-slate-700/60'}`}>
                   <button
-                    className={`w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors ${isOpen ? 'bg-slate-700/60' : 'bg-slate-800/80 hover:bg-slate-800'}`}
+                    className={`section-title-row w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors ${isOpen ? 'bg-slate-700/60' : 'bg-slate-800/80 hover:bg-slate-800'}`}
                     onClick={() => toggleSection(i)}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -1948,13 +1962,11 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
                       <span className={`font-semibold text-sm truncate ${isOpen ? 'text-white' : 'text-slate-300'}`}>{sec.title}</span>
                       {isFirst && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0 hidden sm:inline">여기서 시작</span>}
                     </div>
-                    <span className={`text-slate-400 text-xs transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+                    <span className={`no-print text-slate-400 text-xs transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
-                  {isOpen && (
-                    <div className="p-5 bg-slate-900/50">
-                      <Body />
-                    </div>
-                  )}
+                  <div className={`print-section-body p-5 bg-slate-900/50 ${isOpen ? 'block' : 'hidden'}`}>
+                    <Body />
+                  </div>
                 </div>
               );
             })}

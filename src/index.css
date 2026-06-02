@@ -1,1 +1,89 @@
 @import "tailwindcss";
+
+/* ── PDF 출력용 print 스타일 ── */
+@media print {
+  /* 출력 시 숨길 요소 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 출력 영역만 보이게 */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* 페이지 여백 */
+  @page {
+    margin: 15mm 12mm;
+    size: A4;
+  }
+
+  /* 출력 대상 컨테이너 */
+  #print-area {
+    display: block !important;
+  }
+
+  /* 모든 배경색 제거, 텍스트 검정 */
+  #print-area * {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 구분선 유지 */
+  #print-area [class*="border"] {
+    border-color: #aaa !important;
+  }
+  #print-area hr {
+    border-color: #aaa !important;
+  }
+
+  /* 코드 블록 */
+  #print-area pre,
+  #print-area code {
+    background: #f4f4f4 !important;
+    color: #111 !important;
+    border: 1px solid #ccc !important;
+    font-size: 9pt;
+    padding: 6px 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 섹션 제목 구분선 */
+  #print-area .section-title-row {
+    border-bottom: 1px solid #999 !important;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* 페이지 넘김 방지 */
+  #print-area h2,
+  #print-area h3 {
+    page-break-after: avoid;
+  }
+
+  /* 링크 색상 */
+  #print-area a {
+    color: #333 !important;
+    text-decoration: underline;
+  }
+
+  /* 버튼 숨기기 */
+  #print-area button {
+    display: none !important;
+  }
+
+  /* 아코디언 섹션 — 출력 시 모두 펼쳐서 보이게 */
+  #print-area .print-section-body {
+    display: block !important;
+  }
+}
