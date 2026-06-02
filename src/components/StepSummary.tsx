@@ -1,19 +1,20 @@
 interface StepSummaryProps {
   goal: string;
   time: string;
-  difficulty: '쉬움' | '보통' | '어려움';
+  difficulty: '쉬움' | '보통' | '어려움' | '보통~어려움';
   items: string[];
   result: string;
 }
 
 const DIFFICULTY_STYLE = {
-  '쉬움':   { bar: 'bg-emerald-500', text: 'text-emerald-400', fill: 'w-1/3' },
-  '보통':   { bar: 'bg-amber-500',   text: 'text-amber-400',   fill: 'w-2/3' },
-  '어려움': { bar: 'bg-red-500',     text: 'text-red-400',     fill: 'w-full' },
+  '쉬움':      { bar: 'bg-emerald-500', text: 'text-emerald-400', fill: 'w-1/3'  },
+  '보통':      { bar: 'bg-amber-500',   text: 'text-amber-400',   fill: 'w-2/3'  },
+  '어려움':    { bar: 'bg-red-500',     text: 'text-red-400',     fill: 'w-full' },
+  '보통~어려움': { bar: 'bg-orange-500', text: 'text-orange-400',  fill: 'w-4/5'  },
 };
 
 export default function StepSummary({ goal, time, difficulty, items, result }: StepSummaryProps) {
-  const d = DIFFICULTY_STYLE[difficulty];
+  const d = DIFFICULTY_STYLE[difficulty] ?? DIFFICULTY_STYLE['보통'];
   return (
     <div className="mb-6 rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/60">
       {/* 헤더 */}
