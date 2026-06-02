@@ -2334,7 +2334,7 @@ ares@pve-nas:~$ _`}</pre>
     },
   ];
 
-  const step = STEPS[activeStep];
+  const step = STEPS[activeStep] ?? STEPS[0];
 
   /* ──────────────────────────────────────────
      JSX 렌더
