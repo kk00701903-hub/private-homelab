@@ -1476,7 +1476,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
               {/* STEP 1: NAS에 설치 */}
               <p className="text-white font-semibold text-sm mb-2">① NAS VM에 Tailscale 설치</p>
               <p className="text-xs text-slate-400 mb-2">NAS VM에 SSH로 접속한 뒤 아래 명령어를 실행합니다.</p>
-              <CodeBlock label="NAS VM SSH (ares 계정)" code={`# NAS VM SSH 접속\nssh ares@${nasIP}\n\n# Tailscale 공식 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# Tailscale 시작 및 로그인\nsudo tailscale up\n\n# 출력된 URL을 브라우저에서 열어 계정 연결 (Proxmox 때와 동일 계정!)\n# https://login.tailscale.com/a/xxxxxxxx`} />
+              <CodeBlock label="NAS VM SSH (ares 계정)" code={`# NAS VM SSH 접속\nssh ares@${nasIP}\n\n# Tailscale 공식 설치 스크립트\ncurl -fsSL https://tailscale.com/install.sh | sh\n\n# Tailscale 시작 및 로그인\nsudo tailscale up\n\n# 출력된 URL을 브라우저에서 열어 계정 연결 (Proxmox 때와 동일 계정!)\n# https://login.tailscale.com/a/xxxxxxxx\n\n# ✅ 재부팅 후 자동 시작 설정 (필수)\nsudo systemctl enable tailscaled`} />
 
               <Note type="info">Tailscale 계정이 없으면 <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">tailscale.com</a> 에서 무료 가입합니다. Google · GitHub · Microsoft 계정으로 바로 가입 가능합니다.</Note>
 
