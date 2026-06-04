@@ -707,7 +707,7 @@ export default function App() {
                   <tbody className="divide-y divide-slate-800">
                     {[
                       { device: '⚙️ Proxmox 호스트', ip: pxIP,  note: 'Proxmox 웹 UI 접속용' },
-                      { device: '🗄️ VM1 · NAS',      ip: nasIP, note: 'CasaOS · Jellyfin · Samba' },
+                      { device: '🗄️ VM1 · NAS',      ip: nasIP, note: 'Portainer · Jellyfin · Immich · Samba' },
                       { device: '🤖 VM2 · AI',        ip: aiIP,  note: 'Ollama · Dify' },
                       { device: '💻 VM3 · Windows',   ip: winIP, note: 'RDP 원격 접속' },
                     ].map(({ device, ip, note }) => (
@@ -773,7 +773,7 @@ export default function App() {
                 <div className="space-y-1.5 text-xs font-mono">
                   {[
                     { label: 'Proxmox 웹 UI', url: `https://${pxIP}:8006` },
-                    { label: 'CasaOS',        url: `http://${nasIP}` },
+                    { label: 'Portainer',     url: `http://${nasIP}:9000` },
                     { label: 'Jellyfin',      url: `http://${nasIP}:8096` },
                     { label: 'Immich 사진',   url: `http://${nasIP}:2283` },
                     { label: 'Dify AI',       url: `http://${aiIP}` },
@@ -879,7 +879,7 @@ export default function App() {
                       { svc: '⚙️ Proxmox 웹 UI', ext: '8006', int: `${pxIP}:8006`,  proto: 'TCP', color: 'text-amber-300' },
                       { svc: '🎬 Jellyfin',       ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300'  },
                       { svc: '📸 Immich',          ext: '2283', int: `${nasIP}:2283`, proto: 'TCP', color: 'text-pink-300'  },
-                      { svc: '🏠 CasaOS',          ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300'  },
+                      { svc: '🐳 Portainer',       ext: '9000', int: `${nasIP}:9000`, proto: 'TCP', color: 'text-cyan-300'  },
                       { svc: '🤖 Dify AI',         ext: '3000', int: `${aiIP}:80`,    proto: 'TCP', color: 'text-purple-300'},
                       { svc: '🔒 SSH (NAS)',        ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300'},
                     ].map(({ svc, ext, int: intAddr, proto, color }) => (
@@ -919,7 +919,7 @@ export default function App() {
 
     /* ══════════════════════════════════════ STEP 2 NAS */
     {
-      id: 3, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Immich + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
+      id: 3, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + Portainer + Jellyfin + Immich + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
       sections: [
         {
           title: 'Proxmox 웹 UI 접속하기',
@@ -933,9 +933,9 @@ export default function App() {
                   'Proxmox 웹 관리화면에 로그인',
                   'VM 만들기로 NAS 가상컴퓨터 생성',
                   'Ubuntu Linux 설치 (NAS의 운영체제)',
-                  'CasaOS(파일 관리) · Jellyfin(영상 스트리밍) · Immich(사진 관리) · Samba(윈도우 공유) 설치',
+                  'Portainer(Docker 관리) · Jellyfin(영상 스트리밍) · Immich(사진 관리) · Samba(윈도우 공유) 설치',
                 ]}
-                result={`브라우저에서 http://${nasIP} 로 NAS 대시보드 접속, 영상 스트리밍 가능`}
+                result={`브라우저에서 http://${nasIP}:9000 으로 Portainer 대시보드 접속, 영상 스트리밍·사진 백업 가능`}
               />
               <p className="text-slate-300 text-sm mb-3">
                 Proxmox 설치가 완료된 PC와 <strong>같은 네트워크(공유기)</strong>에 연결된 다른 PC 또는 노트북의 브라우저에서 접속합니다.
@@ -1212,13 +1212,66 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           ),
         },
         {
-          title: 'CasaOS 설치 (NAS 대시보드)',
+          title: '🐳 Portainer 설치 (Docker 관리 대시보드)',
           body: () => (
             <>
-              <CodeBlock label="NAS VM SSH" code={`# CasaOS 원클릭 설치 (약 3~5분)\ncurl -fsSL https://get.casaos.io | sudo bash`} />
-              <p className="text-slate-300 text-sm my-2">설치 완료 후 브라우저에서 접속:</p>
-              <BrowserBar url={`http://${nasIP}`} />
-              <Note type="tip">CasaOS는 시놀로지 NAS와 비슷한 예쁜 웹 대시보드를 무료로 제공합니다.</Note>
+              <p className="text-slate-300 text-sm mb-3">
+                Portainer는 Docker 컨테이너를 웹 브라우저에서 시각적으로 관리하는 오픈소스 대시보드입니다.
+                Immich·Jellyfin 등 컨테이너 기반 서비스를 한눈에 확인하고 제어할 수 있습니다.
+              </p>
+
+              {/* 특징 카드 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {[
+                  { icon: '🖥️', label: '웹 UI',       desc: '브라우저로 컨테이너 관리' },
+                  { icon: '📦', label: '스택 관리',   desc: 'docker-compose 파일 배포' },
+                  { icon: '📊', label: '리소스 모니터', desc: 'CPU·RAM·네트워크 실시간' },
+                  { icon: '🔒', label: '무료 CE',      desc: 'Community Edition 영구 무료' },
+                ].map(c => (
+                  <div key={c.label} className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-center text-xs">
+                    <div className="text-xl mb-1">{c.icon}</div>
+                    <p className="text-white font-semibold mb-0.5">{c.label}</p>
+                    <p className="text-slate-500">{c.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Note type="info">Immich 설치 단계에서 Docker를 설치했다면 아래 단계로 바로 진행하세요. Docker가 없다면 먼저 설치합니다.</Note>
+
+              {/* Docker 확인 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">① Docker 설치 확인</p>
+              <CodeBlock label="NAS VM SSH" code={`# Docker 버전 확인 (설치되어 있으면 버전 출력)\ndocker --version\n\n# 없다면 설치\ncurl -fsSL https://get.docker.com | sudo bash\nsudo usermod -aG docker $USER\nnewgrp docker`} />
+
+              {/* Portainer 설치 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② Portainer CE 설치</p>
+              <CodeBlock label="NAS VM SSH" code={`# Portainer 데이터 저장 볼륨 생성\ndocker volume create portainer_data\n\n# Portainer 컨테이너 실행\ndocker run -d \\\n  --name portainer \\\n  --restart=always \\\n  -p 8000:8000 \\\n  -p 9000:9000 \\\n  -v /var/run/docker.sock:/var/run/docker.sock \\\n  -v portainer_data:/data \\\n  portainer/portainer-ce:latest\n\n# 실행 확인\ndocker ps | grep portainer`} />
+
+              <p className="text-slate-300 text-sm my-2">설치 완료 후 브라우저에서 초기 접속 (처음 5분 이내 접속 필수):</p>
+              <BrowserBar url={`http://${nasIP}:9000`} />
+
+              <Note type="warn">Portainer는 처음 실행 후 <strong>5분 이내</strong>에 접속해서 관리자 계정을 생성해야 합니다. 시간이 지나면 컨테이너를 재시작해야 합니다.</Note>
+
+              {/* 초기 설정 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 초기 관리자 계정 생성</p>
+              <div className="space-y-2 mb-3">
+                {[
+                  { step: '1', desc: '브라우저에서 위 주소 접속 → 관리자 아이디·비밀번호 입력 (비밀번호 12자 이상)' },
+                  { step: '2', desc: '"Get Started" 클릭 → "local" 환경 선택' },
+                  { step: '3', desc: '대시보드 진입 — 실행 중인 Docker 컨테이너 목록 확인' },
+                ].map(s => (
+                  <div key={s.step} className="flex items-start gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700 text-xs">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center font-bold flex-shrink-0">{s.step}</span>
+                    <span className="text-slate-300">{s.desc}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Note type="tip">Portainer에서 Immich·Jellyfin의 컨테이너 상태, 로그, 재시작을 마우스 클릭으로 관리할 수 있습니다.</Note>
+
+              {/* 외부 접속 */}
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ Tailscale IP로 외부 접속</p>
+              <BrowserBar url={`http://100.95.120.25:9000`} />
+              <Note type="easy">위 주소는 Tailscale 설치 후 NAS Tailscale IP가 확인된 경우의 예시입니다. <code className="text-cyan-400">tailscale ip -4</code> 로 실제 IP를 확인하세요.</Note>
             </>
           ),
         },
@@ -1506,7 +1559,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
                 <div className="space-y-1.5 text-xs font-mono">
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://100.x.x.x:8096</span></div>
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Immich</span><span className="text-cyan-400">http://100.x.x.x:2283</span></div>
-                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://100.x.x.x</span></div>
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Portainer</span><span className="text-cyan-400">http://100.x.x.x:9000</span></div>
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh ares@100.x.x.x</span></div>
                 </div>
                 <p className="text-xs text-slate-600 mt-2">* 내부 접속(집 안): ssh ares@{nasIP} / 외부 접속(집 밖): ssh ares@[Tailscale IP]</p>
@@ -1770,7 +1823,7 @@ ares@pve-nas:~$ _`}</pre>
                     {[
                       { svc: '🎬 Jellyfin',  ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300' },
                       { svc: '📸 Immich',    ext: '2283', int: `${nasIP}:2283`, proto: 'TCP', color: 'text-pink-300' },
-                      { svc: '🏠 CasaOS',    ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300' },
+                      { svc: '🐳 Portainer', ext: '9000', int: `${nasIP}:9000`, proto: 'TCP', color: 'text-cyan-300' },
                       { svc: '🔒 SSH (NAS)', ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300' },
                     ].map(({ svc, ext, int: intAddr, proto, color }) => (
                       <tr key={svc}>
@@ -1808,7 +1861,7 @@ ares@pve-nas:~$ _`}</pre>
                 <p className="text-sm font-semibold text-white mb-2">외부에서 접속 테스트</p>
                 <div className="space-y-1.5 text-xs font-mono">
                   <div className="flex items-center gap-2"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://[외부IP]:8096</span></div>
-                  <div className="flex items-center gap-2"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://[외부IP]:80</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-500 w-20">Portainer</span><span className="text-cyan-400">http://[외부IP]:9000</span></div>
                   <div className="flex items-center gap-2"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh -p 2222 ubuntu@[외부IP]</span></div>
                 </div>
               </div>
@@ -2688,12 +2741,12 @@ ares@pve-nas:~$ _`}</pre>
             </div>
             <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {(ramPhase === 'now' ? [
-                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '2 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + CasaOS + Jellyfin'    },
+                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '2 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + Portainer + Jellyfin' },
                 { name: 'VM2 · AI 에이전트', icon: '🤖', color: 'border-purple-500/60', badge: 'bg-purple-500/15 text-purple-300 border border-purple-500/30', cpu: '4 vCPU', ram: '4 GB',  disk: '350GB M.2',          sw: 'Ollama(gemma2:2b) + Dify'       },
                 { name: 'VM3 · Windows 11', icon: '💻', color: 'border-slate-500/60',   badge: 'bg-slate-600/40 text-slate-400 border border-slate-500/30',   cpu: '2 vCPU', ram: '2 GB',  disk: '100GB M.2',          sw: '⚠ 사용 시에만 켜기 권장'         },
                 { name: 'Proxmox 호스트',   icon: '⚙️', color: 'border-slate-600',      badge: 'bg-slate-700/40 text-slate-400 border border-slate-600',      cpu: '공유',   ram: '~512 MB', disk: '2GB M.2 (시스템)', sw: 'Proxmox VE 8.x 하이퍼바이저'   },
               ] : [
-                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '4 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + CasaOS + Jellyfin'    },
+                { name: 'VM1 · NAS 서버',   icon: '🗄️', color: 'border-blue-500/60',   badge: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',     cpu: '2 vCPU', ram: '4 GB',  disk: '60GB M.2 + 1TB HDD', sw: 'Ubuntu + Portainer + Jellyfin' },
                 { name: 'VM2 · AI 에이전트', icon: '🤖', color: 'border-purple-500/60', badge: 'bg-purple-500/15 text-purple-300 border border-purple-500/30', cpu: '8 vCPU', ram: '20 GB', disk: '350GB M.2',          sw: 'Ollama(gemma2 9B) + Dify'       },
                 { name: 'VM3 · Windows 11', icon: '💻', color: 'border-cyan-500/60',    badge: 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30',      cpu: '6 vCPU', ram: '8 GB',  disk: '100GB M.2',          sw: 'Windows 11 Pro + Cursor'        },
                 { name: 'Proxmox 호스트',   icon: '⚙️', color: 'border-slate-600',      badge: 'bg-slate-700/40 text-slate-400 border border-slate-600',      cpu: '공유',   ram: '~2 GB 예비', disk: '2GB M.2 (시스템)', sw: 'Proxmox VE 8.x 하이퍼바이저' },
@@ -2815,7 +2868,7 @@ ares@pve-nas:~$ _`}</pre>
               <tbody className="divide-y divide-slate-800/80">
                 {[
                   ['⚙️ Proxmox 관리 UI',  `https://${pxIP}:8006`,   'VM 생성·관리 웹 대시보드'],
-                  ['🏠 CasaOS (NAS)',      `http://${nasIP}`,         '파일·스토리지 관리 대시보드'],
+                  ['🐳 Portainer (NAS)',   `http://${nasIP}:9000`,    'Docker 컨테이너 관리 대시보드'],
                   ['🎬 Jellyfin 스트리밍', `http://${nasIP}:8096`,    '미디어 서버 (Google TV·모바일)'],
                   ['📸 Immich 사진 관리',  `http://${nasIP}:2283`,    'Google 포토 대체 사진·영상 백업'],
                   ['📁 Samba 파일 공유',   `\\\\${nasIP}\\media`,     'Windows 네트워크 드라이브'],
@@ -2838,7 +2891,7 @@ ares@pve-nas:~$ _`}</pre>
         {/* ── Footer ── */}
         <div className="text-center text-xs text-slate-700 pb-6 space-y-1">
           <p>모든 소프트웨어는 오픈소스 / 무료 라이선스 기반입니다.</p>
-          <p>Proxmox VE · Ubuntu Server · CasaOS · Jellyfin · Samba · Docker · Ollama · Dify · PostgreSQL · PGVector</p>
+          <p>Proxmox VE · Ubuntu Server · Portainer · Jellyfin · Immich · Samba · Docker · Ollama · CrewAI</p>
         </div>
       </div>
     </div>
