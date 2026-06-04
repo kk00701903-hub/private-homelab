@@ -775,6 +775,7 @@ export default function App() {
                     { label: 'Proxmox 웹 UI', url: `https://${pxIP}:8006` },
                     { label: 'CasaOS',        url: `http://${nasIP}` },
                     { label: 'Jellyfin',      url: `http://${nasIP}:8096` },
+                    { label: 'Immich 사진',   url: `http://${nasIP}:2283` },
                     { label: 'Dify AI',       url: `http://${aiIP}` },
                   ].map(({ label, url }) => (
                     <div key={label} className="flex items-center gap-3">
@@ -877,6 +878,7 @@ export default function App() {
                     {[
                       { svc: '⚙️ Proxmox 웹 UI', ext: '8006', int: `${pxIP}:8006`,  proto: 'TCP', color: 'text-amber-300' },
                       { svc: '🎬 Jellyfin',       ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300'  },
+                      { svc: '📸 Immich',          ext: '2283', int: `${nasIP}:2283`, proto: 'TCP', color: 'text-pink-300'  },
                       { svc: '🏠 CasaOS',          ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300'  },
                       { svc: '🤖 Dify AI',         ext: '3000', int: `${aiIP}:80`,    proto: 'TCP', color: 'text-purple-300'},
                       { svc: '🔒 SSH (NAS)',        ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300'},
@@ -917,7 +919,7 @@ export default function App() {
 
     /* ══════════════════════════════════════ STEP 2 NAS */
     {
-      id: 3, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
+      id: 3, title: 'VM1 · NAS 서버', subtitle: 'Ubuntu + CasaOS + Jellyfin + Immich + Samba', icon: '🗄️', color: 'from-blue-500 to-cyan-500',
       sections: [
         {
           title: 'Proxmox 웹 UI 접속하기',
@@ -931,7 +933,7 @@ export default function App() {
                   'Proxmox 웹 관리화면에 로그인',
                   'VM 만들기로 NAS 가상컴퓨터 생성',
                   'Ubuntu Linux 설치 (NAS의 운영체제)',
-                  'CasaOS(파일 관리) · Jellyfin(영상 스트리밍) · Samba(윈도우 공유) 설치',
+                  'CasaOS(파일 관리) · Jellyfin(영상 스트리밍) · Immich(사진 관리) · Samba(윈도우 공유) 설치',
                 ]}
                 result={`브라우저에서 http://${nasIP} 로 NAS 대시보드 접속, 영상 스트리밍 가능`}
               />
@@ -1240,6 +1242,80 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
           ),
         },
         {
+          title: '📸 Immich 설치 (사진·영상 관리)',
+          body: () => (
+            <>
+              <p className="text-slate-300 text-sm mb-3">
+                Immich는 Google 포토 대체제로 불리는 오픈소스 사진 관리 솔루션입니다. 자동 백업, 얼굴 인식, 지도 보기, 앨범, 공유 기능을 모두 무료로 제공합니다.
+              </p>
+
+              {/* 특징 카드 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {[
+                  { icon: '📱', label: '모바일 앱', desc: 'iOS · Android 자동 백업' },
+                  { icon: '👤', label: '얼굴 인식', desc: 'AI 기반 인물 분류' },
+                  { icon: '🗺️', label: '지도 보기', desc: 'GPS 태그 사진 지도 표시' },
+                  { icon: '🔒', label: '완전 자가 호스팅', desc: '내 서버, 내 데이터' },
+                ].map(c => (
+                  <div key={c.label} className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-center text-xs">
+                    <div className="text-xl mb-1">{c.icon}</div>
+                    <p className="text-white font-semibold mb-0.5">{c.label}</p>
+                    <p className="text-slate-500">{c.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 설치 — Docker Compose */}
+              <p className="text-white font-semibold text-sm mb-2">① Docker 설치 (처음 한 번만)</p>
+              <CodeBlock label="NAS VM SSH" code={`# Docker 공식 설치 스크립트\ncurl -fsSL https://get.docker.com | sudo bash\n\n# 현재 사용자를 docker 그룹에 추가 (재로그인 필요)\nsudo usermod -aG docker $USER\nnewgrp docker`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">② Immich 설치 폴더 및 설정 파일 생성</p>
+              <CodeBlock label="NAS VM SSH" code={`# 설치 폴더 생성\nmkdir -p ~/immich && cd ~/immich\n\n# 공식 docker-compose.yml 다운로드\nwget -O docker-compose.yml https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml\n\n# 환경 변수 파일 다운로드\nwget -O .env https://github.com/immich-app/immich/releases/latest/download/example.env`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">③ 사진 저장 경로 설정 (.env 편집)</p>
+              <CodeBlock label="NAS VM SSH" code={`nano ~/immich/.env`} />
+              <div className="my-2 p-3 rounded-xl bg-slate-800 border border-slate-700 text-xs font-mono space-y-1">
+                <p className="text-slate-500"># .env 파일에서 아래 항목만 수정하세요</p>
+                <p><span className="text-slate-400">UPLOAD_LOCATION=</span><span className="text-cyan-400">/data/photos</span></p>
+                <p><span className="text-slate-400">DB_DATA_LOCATION=</span><span className="text-cyan-400">/data/immich-db</span></p>
+              </div>
+              <CodeBlock label="NAS VM SSH" code={`# 사진 저장 폴더 생성\nsudo mkdir -p /data/photos /data/immich-db\nsudo chown -R $USER:$USER /data/photos /data/immich-db`} />
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">④ Immich 실행</p>
+              <CodeBlock label="NAS VM SSH" code={`cd ~/immich\n\n# 백그라운드로 실행 (처음 실행 시 이미지 다운로드 약 5~10분 소요)\ndocker compose up -d\n\n# 실행 상태 확인 (모두 Up 이어야 정상)\ndocker compose ps`} />
+
+              <p className="text-slate-300 text-sm my-2">실행 후 브라우저에서 초기 설정 접속:</p>
+              <BrowserBar url={`http://${nasIP}:2283`} />
+
+              <Note type="tip">처음 접속하면 관리자 계정 생성 화면이 나옵니다. 이름·이메일·비밀번호를 입력하면 바로 사용할 수 있습니다.</Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑤ 모바일 앱 연결 (자동 백업)</p>
+              <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {[
+                    { os: '📱 Android', store: 'Google Play Store → Immich 검색 설치', server: `http://${nasIP}:2283` },
+                    { os: '🍎 iOS', store: 'App Store → Immich 검색 설치', server: `http://${nasIP}:2283` },
+                  ].map(a => (
+                    <div key={a.os} className="space-y-1">
+                      <p className="text-white font-semibold">{a.os}</p>
+                      <p className="text-slate-400">1. {a.store}</p>
+                      <p className="text-slate-400">2. 서버 주소 입력: <code className="text-cyan-400">{a.server}</code></p>
+                      <p className="text-slate-400">3. 계정 로그인 → 백업 활성화</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Note type="info">외부(카페, 회사 등)에서도 사진을 자동 백업하려면 Tailscale IP(<code className="text-cyan-400">http://100.95.120.25:2283</code>)를 서버 주소로 입력하세요.</Note>
+
+              <p className="text-white font-semibold text-sm mt-4 mb-2">⑥ 재부팅 후 자동 시작 설정</p>
+              <CodeBlock label="NAS VM SSH" code={`# Immich 자동 시작 서비스 등록\nsudo tee /etc/systemd/system/immich.service << 'EOF'\n[Unit]\nDescription=Immich Photo Server\nAfter=docker.service\nRequires=docker.service\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nWorkingDirectory=/home/ares/immich\nExecStart=/usr/bin/docker compose up -d\nExecStop=/usr/bin/docker compose down\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\nsudo systemctl enable immich\nsudo systemctl daemon-reload`} />
+
+              <Note type="easy">Immich 업데이트는 <code>cd ~/immich && docker compose pull && docker compose up -d</code> 한 줄로 가능합니다.</Note>
+            </>
+          ),
+        },
+        {
           title: 'Samba 설정 (Windows 파일 공유)',
           body: () => (
             <>
@@ -1429,6 +1505,7 @@ ubuntu@nas-server:~$ `}<span className="text-white">_</span></pre>
                 <p className="text-xs text-slate-500 mb-2">Tailscale 연결 후 — 집 밖 어디서든 아래 주소로 접속 (100.x.x.x = NAS Tailscale IP)</p>
                 <div className="space-y-1.5 text-xs font-mono">
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Jellyfin</span><span className="text-cyan-400">http://100.x.x.x:8096</span></div>
+                  <div className="flex items-center gap-3"><span className="text-slate-500 w-20">Immich</span><span className="text-cyan-400">http://100.x.x.x:2283</span></div>
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">CasaOS</span><span className="text-cyan-400">http://100.x.x.x</span></div>
                   <div className="flex items-center gap-3"><span className="text-slate-500 w-20">SSH</span><span className="text-cyan-400">ssh ares@100.x.x.x</span></div>
                 </div>
@@ -1692,6 +1769,7 @@ ares@pve-nas:~$ _`}</pre>
                   <tbody className="divide-y divide-slate-800">
                     {[
                       { svc: '🎬 Jellyfin',  ext: '8096', int: `${nasIP}:8096`, proto: 'TCP', color: 'text-blue-300' },
+                      { svc: '📸 Immich',    ext: '2283', int: `${nasIP}:2283`, proto: 'TCP', color: 'text-pink-300' },
                       { svc: '🏠 CasaOS',    ext: '80',   int: `${nasIP}:80`,   proto: 'TCP', color: 'text-cyan-300' },
                       { svc: '🔒 SSH (NAS)', ext: '2222', int: `${nasIP}:22`,   proto: 'TCP', color: 'text-emerald-300' },
                     ].map(({ svc, ext, int: intAddr, proto, color }) => (
@@ -2739,6 +2817,7 @@ ares@pve-nas:~$ _`}</pre>
                   ['⚙️ Proxmox 관리 UI',  `https://${pxIP}:8006`,   'VM 생성·관리 웹 대시보드'],
                   ['🏠 CasaOS (NAS)',      `http://${nasIP}`,         '파일·스토리지 관리 대시보드'],
                   ['🎬 Jellyfin 스트리밍', `http://${nasIP}:8096`,    '미디어 서버 (Google TV·모바일)'],
+                  ['📸 Immich 사진 관리',  `http://${nasIP}:2283`,    'Google 포토 대체 사진·영상 백업'],
                   ['📁 Samba 파일 공유',   `\\\\${nasIP}\\media`,     'Windows 네트워크 드라이브'],
                   ['🤖 Dify AI 빌더',      `http://${aiIP}`,          'AI 에이전트·워크플로우'],
                   ['🦙 Ollama API',        `http://${aiIP}:11434`,    'Gemma2 로컬 LLM API'],
