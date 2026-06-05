@@ -2712,13 +2712,15 @@ ares@pve-nas:~$ _`}</pre>
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {[
                     ['사용자 계정 (ID)', 'ares'],
+                    ['Full Name', 'ares'],
+                    ['이메일 주소', 'kk00701903@gmail.com'],
                     ['호스트 이름 (Hostname)', 'pve-nas'],
                     ['내부 네트워크 IP (LAN)', '192.168.200.129'],
                     ['VM 관리 ID', 'VMID 100'],
                   ].map(([k, v]) => (
                     <div key={k as string} className="p-3 bg-slate-800 rounded-xl border border-slate-700">
                       <div className="text-xs text-slate-500 mb-1">{k}</div>
-                      <div className="font-mono text-emerald-400 text-sm">{v}</div>
+                      <div className="font-mono text-emerald-400 text-sm break-all">{v}</div>
                     </div>
                   ))}
                 </div>
