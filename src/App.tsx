@@ -2443,9 +2443,222 @@ ares@pve-nas:~$ _`}</pre>
       ],
     },
 
-    /* ══════════════════════════════════════ STEP 8 접속 정보 요약 */
+    /* ══════════════════════════════════════ STEP 8 Docker 개념 이해 */
     {
-      id: 8, title: '접속 정보 요약', subtitle: '내 홈랩 주소 · 계정 · SSH 한눈에 보기', icon: '📋', color: 'from-slate-500 to-slate-700',
+      id: 8, title: 'Docker 개념 이해', subtitle: '컨테이너 · 이미지 · Compose 한눈에 보기', icon: '🐋', color: 'from-sky-500 to-blue-600',
+      sections: [
+        {
+          title: '🐋 Docker란? — 가상화 환경과 비교해서 이해하기',
+          body: () => (
+            <>
+              <StepSummary
+                goal="NAS·AI 서버에서 사용하는 Docker의 핵심 개념을 쉽게 이해합니다"
+                time="읽기 약 10분"
+                difficulty="쉬움"
+                items={[
+                  'Docker 이미지·컨테이너·엔진 개념 이해',
+                  '기존 가상화(VM)와 Docker 컨테이너 차이 비교',
+                  'docker run / docker compose 기본 명령 이해',
+                  'Portainer로 컨테이너를 GUI로 관리하는 방법',
+                ]}
+                result="Immich·Jellyfin 등 컨테이너 서비스가 어떻게 돌아가는지 명확히 이해"
+              />
+
+              {/* 핵심 비유 테이블 */}
+              <div className="mb-6 rounded-2xl overflow-hidden border border-sky-500/40">
+                <div className="bg-sky-900/40 px-5 py-3 border-b border-sky-500/30">
+                  <p className="text-sky-200 font-bold text-sm">📦 핵심 개념 비유 — 기존 PC 가상화 환경 vs 🐋 Docker 인프라</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700 bg-slate-800/60">
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs w-1/3">비교 항목</th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs w-1/3">🖥️ 기존 PC 가상화 환경</th>
+                        <th className="text-left py-3 px-4 text-sky-400 font-medium text-xs w-1/3">🐋 Docker 인프라</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {[
+                        {
+                          item: '📄 설계도 파일 (얼어있는 상태)',
+                          vm:     '.iso 이미지 파일\n(Windows/Linux 설치 파일)',
+                          docker: '도커 이미지\n(Docker Image)',
+                          vmColor: 'text-slate-300',
+                          dColor: 'text-sky-300',
+                        },
+                        {
+                          item: '⚙️ 실행 프로그램 (엔진)',
+                          vm:     'ISO 실행·가상화 프로그램\n(VMware, VirtualBox, Proxmox)',
+                          docker: '도커 엔진\n(Docker Engine)',
+                          vmColor: 'text-slate-300',
+                          dColor: 'text-sky-300',
+                        },
+                        {
+                          item: '🟢 살아 움직이는 실체 (구동 상태)',
+                          vm:     '설치 완료 후 켜진\n가상 컴퓨터',
+                          docker: '도커 컨테이너\n(Docker Container)',
+                          vmColor: 'text-slate-300',
+                          dColor: 'text-sky-300',
+                        },
+                      ].map(row => (
+                        <tr key={row.item} className="hover:bg-slate-800/30">
+                          <td className="py-3 px-4 text-white font-semibold text-xs whitespace-pre-line">{row.item}</td>
+                          <td className={`py-3 px-4 text-xs whitespace-pre-line ${row.vmColor}`}>{row.vm}</td>
+                          <td className={`py-3 px-4 text-xs font-semibold whitespace-pre-line ${row.dColor}`}>{row.docker}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 상세 설명 카드 */}
+              <p className="text-white font-bold text-sm mb-3">각 개념 자세히 보기</p>
+              <div className="space-y-3 mb-6">
+                {[
+                  {
+                    icon: '📄',
+                    title: '도커 이미지 (Docker Image) — 설계도',
+                    color: 'border-sky-500/40 bg-sky-900/10',
+                    badge: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+                    body: [
+                      '누군가가 만들어 놓은 "프로그램 설치 완료 + 설정 완료" 상태의 스냅샷 파일입니다.',
+                      '예) immich-app/immich 이미지 = Immich 서버가 설치된 리눅스 환경 전체가 압축된 파일.',
+                      'Docker Hub (hub.docker.com)에서 무료로 다운로드 할 수 있습니다.',
+                      '이미지 자체는 읽기 전용이며, 실행 전까지는 아무것도 하지 않습니다.',
+                    ],
+                    code: '# 이미지 다운로드\ndocker pull nginx\n\n# 보유한 이미지 목록 확인\ndocker images',
+                  },
+                  {
+                    icon: '🐋',
+                    title: '도커 엔진 (Docker Engine) — 실행 프로그램',
+                    color: 'border-blue-500/40 bg-blue-900/10',
+                    badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+                    body: [
+                      '이미지를 읽어 컨테이너(실행 중인 프로그램)를 만들고 관리하는 핵심 엔진입니다.',
+                      '리눅스 커널과 직접 통신하여 각 컨테이너를 격리·실행합니다.',
+                      'curl -fsSL https://get.docker.com | bash 한 줄로 설치됩니다.',
+                    ],
+                    code: '# Docker 엔진 상태 확인\nsudo systemctl status docker\n\n# Docker 버전 확인\ndocker --version',
+                  },
+                  {
+                    icon: '🟢',
+                    title: '도커 컨테이너 (Docker Container) — 살아 움직이는 실체',
+                    color: 'border-emerald-500/40 bg-emerald-900/10',
+                    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+                    body: [
+                      '이미지를 실행하면 생기는 "독립된 실행 환경"입니다. VM처럼 각자 격리되어 있습니다.',
+                      '컨테이너를 삭제해도 이미지는 남아 있으므로, 언제든 다시 똑같은 환경으로 복원 가능합니다.',
+                      '여러 개의 컨테이너를 같은 이미지로 동시에 띄울 수도 있습니다.',
+                    ],
+                    code: '# 컨테이너 실행 (이미지 → 컨테이너)\ndocker run -d --name my-nginx -p 80:80 nginx\n\n# 실행 중인 컨테이너 목록\ndocker ps\n\n# 컨테이너 중지·삭제\ndocker stop my-nginx\ndocker rm my-nginx',
+                  },
+                ].map(card => (
+                  <div key={card.title} className={`rounded-xl border ${card.color} overflow-hidden`}>
+                    <div className="px-4 py-3 flex items-center gap-2">
+                      <span className="text-xl">{card.icon}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${card.badge}`}>{card.title}</span>
+                    </div>
+                    <div className="px-4 pb-3">
+                      <ul className="space-y-1 mb-3">
+                        {card.body.map((b, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                            <span className="text-slate-600 mt-0.5 flex-shrink-0">•</span>
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <CodeBlock label="터미널" code={card.code} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* VM vs Docker 핵심 차이 */}
+              <p className="text-white font-bold text-sm mb-3">🆚 Proxmox VM vs Docker 컨테이너 — 언제 무엇을 쓸까?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                {[
+                  {
+                    title: '🖥️ Proxmox VM (가상 머신)',
+                    color: 'border-amber-500/40 bg-amber-900/10',
+                    items: [
+                      '완전한 운영체제를 가상화 (커널 포함)',
+                      '윈도우·다른 리눅스 배포판 실행 가능',
+                      'NAS VM, AI VM, Windows VM처럼 서버 단위로 분리할 때',
+                      '리소스 많이 사용, 부팅 시간 느림',
+                    ],
+                    use: '서버 OS 단위 분리',
+                    useColor: 'text-amber-300',
+                  },
+                  {
+                    title: '🐋 Docker 컨테이너',
+                    color: 'border-sky-500/40 bg-sky-900/10',
+                    items: [
+                      '호스트 OS 커널 공유 — 매우 가볍고 빠름',
+                      '리눅스 앱·서비스 단위로 격리',
+                      'Immich, Jellyfin, Portainer 같은 앱 배포 시',
+                      '시작 시간 1~2초, 리소스 최소화',
+                    ],
+                    use: '앱·서비스 단위 배포',
+                    useColor: 'text-sky-300',
+                  },
+                ].map(c => (
+                  <div key={c.title} className={`p-4 rounded-xl border ${c.color}`}>
+                    <p className="text-white font-semibold text-sm mb-2">{c.title}</p>
+                    <ul className="space-y-1.5 mb-3">
+                      {c.items.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                          <span className="text-slate-500 mt-0.5">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs">적합한 용도: <span className={`font-bold ${c.useColor}`}>{c.use}</span></p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Docker Compose */}
+              <p className="text-white font-bold text-sm mb-3">📋 Docker Compose — 여러 컨테이너를 한 번에 관리</p>
+              <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-3">
+                <p className="text-xs text-slate-400 mb-3">
+                  Immich는 웹 서버·데이터베이스·머신러닝 등 여러 컨테이너가 함께 동작합니다.
+                  이처럼 여러 컨테이너를 <strong className="text-white">한 파일(docker-compose.yml)</strong>로 정의하고
+                  한 명령으로 통째로 실행·종료하는 도구가 <strong className="text-sky-300">Docker Compose</strong>입니다.
+                </p>
+                <CodeBlock label="터미널" code={`# docker-compose.yml 이 있는 폴더에서\n\n# 모든 컨테이너 시작 (백그라운드)\ndocker compose up -d\n\n# 모든 컨테이너 중지\ndocker compose down\n\n# 로그 확인\ndocker compose logs -f\n\n# 이미지 최신 버전으로 업데이트\ndocker compose pull && docker compose up -d`} />
+              </div>
+
+              {/* Portainer 연결 */}
+              <div className="p-4 bg-slate-800/60 rounded-xl border border-cyan-500/30">
+                <p className="text-cyan-300 font-semibold text-sm mb-2">🐳 Portainer — 위 모든 것을 마우스로!</p>
+                <p className="text-xs text-slate-400 mb-2">
+                  터미널 명령 없이 브라우저에서 컨테이너 시작·중지·로그 확인을 할 수 있는 Docker GUI 관리 도구입니다.
+                  STEP 3 NAS 서버 설치 단계에서 Portainer를 설치하면 됩니다.
+                </p>
+                <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                  {[
+                    { icon: '▶️', label: '컨테이너 시작·중지' },
+                    { icon: '📋', label: '로그 실시간 확인' },
+                    { icon: '📦', label: 'Compose 스택 배포' },
+                  ].map(f => (
+                    <div key={f.label} className="p-2 bg-slate-900/60 rounded-lg border border-slate-700">
+                      <div className="text-lg mb-1">{f.icon}</div>
+                      <p className="text-slate-300">{f.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ),
+        },
+      ],
+    },
+
+    /* ══════════════════════════════════════ STEP 9 접속 정보 요약 */
+    {
+      id: 9, title: '접속 정보 요약', subtitle: '내 홈랩 주소 · 계정 · SSH 한눈에 보기', icon: '📋', color: 'from-slate-500 to-slate-700',
       sections: [
         {
           title: '내 홈랩 접속 정보 모음',
