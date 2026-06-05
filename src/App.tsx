@@ -3080,18 +3080,28 @@ ares@pve-nas:~$ _`}</pre>
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {[
-                  ['⚙️ Proxmox 관리 UI',  `https://${pxIP}:8006`,   'VM 생성·관리 웹 대시보드'],
-                  ['🐳 Portainer (NAS)',   `http://${nasIP}:9000`,    'Docker 컨테이너 관리 대시보드'],
-                  ['🎬 Jellyfin 스트리밍', `http://${nasIP}:8096`,    '미디어 서버 (Google TV·모바일)'],
-                  ['📸 Immich 사진 관리',  `http://${nasIP}:2283`,    'Google 포토 대체 사진·영상 백업'],
-                  ['📁 Samba 파일 공유',   `\\\\${nasIP}\\media`,     'Windows 네트워크 드라이브'],
-                  ['🤖 Dify AI 빌더',      `http://${aiIP}`,          'AI 에이전트·워크플로우'],
-                  ['🦙 Ollama API',        `http://${aiIP}:11434`,    'Gemma2 로컬 LLM API'],
-                  ['💻 Windows RDP',       `${winIP}:3389`,           '원격 데스크탑 접속'],
+                  ['⚙️ Proxmox 관리 UI',      `https://${pxIP}:8006`,          'VM 생성·관리 웹 대시보드'],
+                  ['🔒 Tailscale 관리자',   'https://login.tailscale.com',   '기기 연결 확인·관리 (admin.tailscale.com)'],
+                  ['🐳 Portainer (NAS)',    `http://${nasIP}:9000`,          'Docker 컨테이너 관리 대시보드'],
+                  ['🎬 Jellyfin 스트리밍',  `http://${nasIP}:8096`,          '미디어 서버 (Google TV·모바일)'],
+                  ['📸 Immich 사진 관리',   `http://${nasIP}:2283`,          'Google 포토 대체 사진·영상 백업'],
+                  ['📁 Samba 파일 공유',    `\\\\${nasIP}\\media`,           'Windows 네트워크 드라이브'],
+                  ['🤖 Dify AI 빌더',       `http://${aiIP}`,                'AI 에이전트·워크플로우'],
+                  ['🦙 Ollama API',         `http://${aiIP}:11434`,          'Gemma2 로컬 LLM API'],
+                  ['💻 Windows RDP',        `${winIP}:3389`,                 '원격 데스크탑 접속'],
                 ].map(([svc, addr, use], i) => (
                   <tr key={i}>
                     <td className="py-2.5 pr-4 text-slate-300 whitespace-nowrap">{svc}</td>
-                    <td className="py-2.5 pr-4 font-mono text-cyan-400 text-xs whitespace-nowrap">{addr}</td>
+                    <td className="py-2.5 pr-4 font-mono text-xs whitespace-nowrap">
+                      {addr.startsWith('http') ? (
+                        <a href={addr} target="_blank" rel="noopener noreferrer"
+                          className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 decoration-cyan-600 hover:decoration-cyan-400 transition-colors">
+                          {addr}
+                        </a>
+                      ) : (
+                        <span className="text-cyan-400">{addr}</span>
+                      )}
+                    </td>
                     <td className="py-2.5 text-slate-500 text-xs">{use}</td>
                   </tr>
                 ))}
